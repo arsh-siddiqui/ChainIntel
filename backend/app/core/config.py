@@ -48,11 +48,16 @@ class Settings(BaseSettings):
 
     @property
     def effective_database_url(self) -> str:
-        if self.database_url:
-            return self.database_url
+        url = self.database_url.strip() if self.database_url else ""
+        if url:
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+psycopg://", 1)
+            elif url.startswith("postgresql://") and "+psycopg" not in url and "+psycopg2" not in url:
+                url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+            return url
         if self.postgres_password:
             return f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
-        return f"postgresql+psycopg://{self.postgres_user}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        return "sqlite:///./data/chainintel.db"
 
     @property
     def cors_origin_list(self) -> list[str]:
