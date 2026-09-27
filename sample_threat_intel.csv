@@ -1,0 +1,26 @@
+address,blockchain,label,category,source,reference_url,confidence,first_seen,last_seen,notes
+12ib7dApVFvg82TXKycWBNpN8kFyiAN1dr,bitcoin,WannaCry Ransomware Attacker,Ransomware,CISA Advisory,https://cisa.gov,0.99,2017-05-12,2026-01-01,High profile ransomware extortion address from 2017 global outbreak
+1FeexV6bAHb8ybZjqQMjJrcCrHGW9sb6uF,bitcoin,MtGox Hacker 1Feex,Exploit,Forensic Intel Feed,https://mempool.space,0.95,2011-03-01,2026-01-01,Historical 79956 BTC MtGox theft compromise wallet
+1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX,bitcoin,Silk Road Seized Wallet,Blacklist,US Marshals Public Notice,https://justice.gov,0.99,2013-10-02,2026-01-01,Historical law enforcement seized address associated with Ross Ulbricht forfeiture
+bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh,bitcoin,Twitter VIP Social Engineering Scam,Scam,FBI Cyber Division,https://fbi.gov,0.99,2020-07-15,2026-01-01,July 2020 high profile Twitter accounts hijack extortion wallet
+1NDyJtNTjmwk5xPNhjgAMu4HDHigtobu1s,bitcoin,Binance Security Incident 2019,Exploit,Binance Incident Report,https://binance.com,0.95,2019-05-07,2026-01-01,7000 BTC security breach drainage address
+bc1qm34lsc65zpw79lxes69zkqmk6ee3ewf0j77s3h,bitcoin,Poly Network Cross-Chain Hack,Exploit,SlowMist Forensics,https://slowmist.com,0.95,2021-08-10,2026-01-01,Cross-chain protocol bridge exploit address
+0x098b716b8aaf21512996dc57eb0615e2383e2f96,ethereum,Tornado Cash Router,Suspicious Service,OFAC Sanctions,https://treasury.gov/ofac,1.00,2022-08-08,2026-01-01,Sanctioned smart contract mixer entrypoint
+0x12d66f87a04a9e220743712ce6d9bb1b5616b8fc,ethereum,Tornado Cash 0.1 ETH Pool,Suspicious Service,OFAC Sanctions,https://treasury.gov/ofac,1.00,2019-12-16,2026-01-01,Sanctioned privacy mixer contract pool
+0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936,ethereum,Tornado Cash 1 ETH Pool,Suspicious Service,OFAC Sanctions,https://treasury.gov/ofac,1.00,2019-12-16,2026-01-01,Sanctioned privacy mixer contract pool
+0x910cbd523d972eb0a6f4cae4618ad62622b39dbf,ethereum,Tornado Cash 10 ETH Pool,Suspicious Service,OFAC Sanctions,https://treasury.gov/ofac,1.00,2019-12-16,2026-01-01,Sanctioned privacy mixer contract pool
+0xa160cdab225685da1d56aa342ad8841c3b53f291,ethereum,Tornado Cash 100 ETH Pool,Suspicious Service,OFAC Sanctions,https://treasury.gov/ofac,1.00,2019-12-16,2026-01-01,Sanctioned privacy mixer contract pool
+0x8589427373d6d84e98730d7795d8f6f8731fda16,ethereum,Tornado Cash 500 ETH Pool,Suspicious Service,OFAC Sanctions,https://treasury.gov/ofac,1.00,2020-05-10,2026-01-01,Sanctioned privacy mixer contract pool
+0x722122df12d4504040596d6b7b47e9fa615a15dd,ethereum,Tornado Cash Relayer Registry,Suspicious Service,OFAC Sanctions,https://treasury.gov/ofac,1.00,2022-08-08,2026-01-01,Sanctioned relayer proxy infrastructure
+0x7f367cc41522ce07553e8435b8b4f7257b434f4e,ethereum,Ronin Bridge Exploiter,Exploit,FBI / OFAC Lazarus Notice,https://treasury.gov/ofac,0.99,2022-03-23,2026-01-01,Axie Infinity $620M exploit linked to Lazarus Group
+0x59abf3837fa962d6853b4cc0a19513aa031fd32b,ethereum,FTX Unauthorized Drainer,Exploit,Chainalysis Forensic Alert,https://chainalysis.com,0.95,2022-11-11,2026-01-01,Nov 2022 unauthorized drainage during bankruptcy filing
+0x2faf487a4414fe77e2327f0bf4ae2a264a776ad2,ethereum,FTX Accounts Drainer 2,Exploit,PeckShield Alert,https://peckshield.com,0.95,2022-11-12,2026-01-01,Secondary destination wallet for unauthorized FTX withdrawals
+0x3845badade8e6dff049820680d1f14bd3903a5d0,ethereum,Euler Finance Exploiter,Exploit,Euler Protocol Advisory,https://euler.finance,0.95,2023-03-13,2026-01-01,$197M flash loan exploit attacker address
+0x401534142d9845d413e02de0304729fbf1dcebe0,ethereum,Wormhole Bridge Exploiter,Exploit,CertiK Security Feed,https://certik.com,0.95,2022-02-02,2026-01-01,$320M cross-chain signature verification exploit
+0x00000000ae34793032445210acab3f6dd3ab0702,ethereum,Nomad Bridge Exploiter,Exploit,Paradigm Security Advisory,https://paradigm.xyz,0.95,2022-08-01,2026-01-01,$190M replica bridge message verification flaw exploit
+0x3cffd56b47b7b41c56258d9c7731abdc360e35ec,ethereum,Monkey Drainer Primary Wallet,Phishing,Scam Sniffer Intel,https://scamsniffer.io,0.95,2022-10-01,2026-01-01,Prominent phishing-as-a-service wallet drainer operation
+0x4e27f001e40a08e67f70b777a164b73b5df5fe64,ethereum,Pink Drainer Operator,Phishing,ChainPatrol Feed,https://chainpatrol.io,0.95,2023-05-01,2026-01-01,Multi-million dollar phishing kit operator address
+0x94142b272e2468713f074ab742337d45129fc8b0,ethereum,Inferno Drainer Contract,Phishing,ZachXBT Investigation,https://twitter.com/zachxbt,0.95,2023-03-15,2026-01-01,Widespread crypto phishing fee receiver address
+0x6da4299b82142d547f311c12d26315eeef3ee824,ethereum,Cream Finance Flash Loan Hacker,Exploit,SlowMist Forensics,https://slowmist.com,0.95,2021-10-27,2026-01-01,$130M flash loan manipulation exploit
+0xd862217c9d92b7194f47ec05a5a1f1bcf447f5b3,ethereum,Transit Swap Exploiter,Exploit,Transit Swap Notice,https://transitswap.io,0.95,2022-10-02,2026-01-01,$28M router contract arbitrary call flaw
+0x6007e7e6ea23fdda3381d50b65325e17ec7c249d,ethereum,BadgerDAO Protocol Hacker,Exploit,Badger Incident Team,https://badger.com,0.95,2021-12-02,2026-01-01,$120M unauthorized script injection drainage wallet

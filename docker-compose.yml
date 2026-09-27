@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: chainintel
+      POSTGRES_PASSWORD: chainintel
+      POSTGRES_DB: chainintel
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chainintel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://chainintel:chainintel@postgres:5432/chainintel
+      APP_MODE: LIVE
+      CORS_ORIGINS: http://localhost:3000
+      MONITORING_ENABLED: "true"
+      POLL_INTERVAL_SECONDS: "60"
+      # Live blockchain providers: Bitcoin works keylessly; add EVM keys as needed.
+      ETHERSCAN_API_KEY: "${ETHERSCAN_API_KEY:-}"
+      MORALIS_API_KEY: "${MORALIS_API_KEY:-}"
+      ANKR_API_KEY: "${ANKR_API_KEY:-}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-8099}:8000"
+    volumes:
+      - evidence_data:/app/data
+
+  frontend:
+    build: ./frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_PORT:-8099}
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  evidence_data:
