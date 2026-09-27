@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
+**/node_modules/
 __pycache__/
+**/__pycache__/
 *.py[cod]
 .venv/
 venv/
@@ -12,15 +14,21 @@ dist/
 build/
 *.tsbuildinfo
 
-# Environment / secrets
+# Environment & secrets
 .env
 .env.local
 .env*.local
+backend/.env
+frontend/.env.local
 
-# Local data (SQLite, evidence files)
+# Local data & logs
 data/
+backend/data/
 *.db
 *.sqlite3
+*.log
+app-*.log
+.freebuff/
 
 # Tooling
 .pytest_cache/
@@ -31,14 +39,8 @@ coverage/
 playwright-report/
 test-results/
 
-# OS / editor
+# OS / Editor
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
-
-# Logs & temp
-*.log
-.freebuff/
-scratch_*
-
