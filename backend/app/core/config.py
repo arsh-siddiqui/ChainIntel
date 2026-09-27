@@ -1,7 +1,32 @@
 """Application configuration loaded from environment variables / .env."""
 from __future__ import annotations
 
+import re
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def normalize_database_url(url: str) -> str:
+    """Normalize database URLs for SQLAlchemy.
+    
+    Render PostgreSQL URLs (postgres:// or postgresql://) are normalized to
+    postgresql+psycopg:// for the psycopg v3 driver.
+    """
+    if not url:
+        return ""
+    cleaned = url.strip()
+    if cleaned.startswith("postgres://"):
+        return cleaned.replace("postgres://", "postgresql+psycopg://", 1)
+    if cleaned.startswith("postgresql://") and "+psycopg" not in cleaned and "+psycopg2" not in cleaned:
+        return cleaned.replace("postgresql://", "postgresql+psycopg://", 1)
+    return cleaned
+
+
+def sanitize_database_url(url: str) -> str:
+    """Mask password in database URL for safe logging."""
+    if not url:
+        return "not_configured"
+    # Replace password in postgresql+psycopg://user:password@host:port/db
+    return re.sub(r"://([^:@]+):([^@]+)@", r"://\1:****@", url)
 
 
 class Settings(BaseSettings):
@@ -9,7 +34,7 @@ class Settings(BaseSettings):
 
     app_name: str = "ChainIntel"
     app_version: str = "1.0.0"
-    app_mode: str = "LIVE"  # ChainIntel runs against real blockchain APIs only
+    app_mode: str = "LIVE"
 
     database_url: str = ""
     postgres_host: str = "localhost"
@@ -30,7 +55,6 @@ class Settings(BaseSettings):
     moralis_api_url: str = "https://deep-index.moralis.io/api/v2.2"
     ankr_api_key: str = ""
     ankr_api_url: str = "https://rpc.ankr.com/multichain"
-    # Optional blockchain.info api_code (higher rate limits); public endpoints work without it.
     blockchain_api_key: str = ""
 
     # OSINT
@@ -48,16 +72,24 @@ class Settings(BaseSettings):
 
     @property
     def effective_database_url(self) -> str:
-        url = self.database_url.strip() if self.database_url else ""
-        if url:
-            if url.startswith("postgres://"):
-                url = url.replace("postgres://", "postgresql+psycopg://", 1)
-            elif url.startswith("postgresql://") and "+psycopg" not in url and "+psycopg2" not in url:
-                url = url.replace("postgresql://", "postgresql+psycopg://", 1)
-            return url
+        """Return the effective normalized database URL.
+        
+        Rules:
+        1. If DATABASE_URL is present in env/.env, it is ALWAYS used (never falls back to localhost).
+        2. If postgres_password is set, constructs PostgreSQL URL.
+        3. Only defaults to SQLite for local development when DATABASE_URL is absent.
+        """
+        if self.database_url and self.database_url.strip():
+            return normalize_database_url(self.database_url)
         if self.postgres_password:
-            return f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+            raw = f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+            return normalize_database_url(raw)
         return "sqlite:///./data/chainintel.db"
+
+    @property
+    def sanitized_database_url(self) -> str:
+        """Sanitized DB URL for safe logging without exposing passwords."""
+        return sanitize_database_url(self.effective_database_url)
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -65,4 +97,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

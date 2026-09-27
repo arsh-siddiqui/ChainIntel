@@ -1,6 +1,6 @@
 """Alembic migration environment for ChainIntel.
 
-Reads the database URL from the backend Settings (which honors
+Reads the effective database URL from the backend Settings (which honors
 DATABASE_URL from the environment / backend .env file).
 """
 from logging.config import fileConfig
@@ -17,15 +17,16 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Point Alembic at the application database URL.
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Point Alembic at the application's effective database URL.
+target_url = settings.effective_database_url
+config.set_main_option("sqlalchemy.url", target_url)
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (emit SQL without a DBAPI connection)."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option("sqlalchemy.url") or target_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -39,8 +40,10 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode with a live connection."""
+    configuration = config.get_section(config.config_ini_section, {}) or {}
+    configuration["sqlalchemy.url"] = target_url
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
