@@ -36,6 +36,8 @@ class BlockchainInfoProvider(BlockchainProvider):
                 response = await client.get(url, params=params)
         except httpx.HTTPError as exc:
             raise ProviderError("PROVIDER_UNAVAILABLE", f"blockchain.info API unreachable: {exc.__class__.__name__}") from exc
+        if response.status_code == 404:
+            raise ProviderError("NOT_FOUND", f"blockchain.info resource '{path}' not found.")
         if response.status_code == 429:
             raise ProviderError("PROVIDER_RATE_LIMITED", "blockchain.info API rate limit reached; retry later.")
         if response.status_code >= 400:
@@ -46,7 +48,17 @@ class BlockchainInfoProvider(BlockchainProvider):
             raise ProviderError("PROVIDER_UNAVAILABLE", "blockchain.info API returned a malformed response.") from exc
 
     async def get_balance(self, address: str) -> dict[str, Any]:
-        data = await self._get(f"/rawaddr/{address}")
+        try:
+            data = await self._get(f"/rawaddr/{address}")
+        except ProviderError as exc:
+            if exc.code == "NOT_FOUND":
+                return {
+                    "balance": 0.0,
+                    "asset": self.asset,
+                    "provider": self.name,
+                    "is_demo": False,
+                }
+            raise
         return {
             "balance": round((data.get("final_balance") or 0) / 1e8, 8),
             "asset": self.asset,
@@ -105,7 +117,7 @@ class BlockchainInfoProvider(BlockchainProvider):
             "asset": "BTC",
             "timestamp": unix_to_datetime(raw.get("time")),
             "block_number": height,
-            "confirmations": 0,  # blockchain.info does not return confirmations here
+            "confirmations": 0,
             "status": "confirmed" if height else "pending",
             "fee": round((raw.get("fee") or 0) / 1e8, 8),
             "is_demo": False,
@@ -114,7 +126,12 @@ class BlockchainInfoProvider(BlockchainProvider):
 
     async def get_transactions(self, address: str, limit: int = 100) -> list[dict[str, Any]]:
         limit = max(1, min(limit, 200))
-        data = await self._get(f"/rawaddr/{address}")
+        try:
+            data = await self._get(f"/rawaddr/{address}")
+        except ProviderError as exc:
+            if exc.code == "NOT_FOUND":
+                return []
+            raise
         raws = data.get("txs") or []
         items: list[dict[str, Any]] = []
         seen: set[str] = set()
@@ -136,7 +153,7 @@ class BlockchainInfoProvider(BlockchainProvider):
 
     async def get_block_info(self, block_number: int) -> dict[str, Any]:
         raw = await self._get(f"/block-height/{block_number}")
-        if not raw or not raw.get("hash"):
+        if not raw or not isinstance(raw, dict) or not raw.get("hash"):
             raise ProviderError("NOT_FOUND", f"Block {block_number} not found.")
         return {
             "block_number": raw.get("height") or block_number,
@@ -147,7 +164,12 @@ class BlockchainInfoProvider(BlockchainProvider):
         }
 
     async def get_address_activity(self, address: str) -> dict[str, Any]:
-        data = await self._get(f"/rawaddr/{address}")
+        try:
+            data = await self._get(f"/rawaddr/{address}")
+        except ProviderError as exc:
+            if exc.code == "NOT_FOUND":
+                return {"first_seen": None, "last_seen": None, "tx_count": 0, "is_demo": False}
+            raise
         txs = await self.get_transactions(address, limit=1)
         timestamps = [t["time"] for t in data.get("txs") or [] if t.get("time")]
         return {

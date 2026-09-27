@@ -48,7 +48,10 @@ async def _poll_live_wallet(db: Session, monitor: MonitoredWallet) -> int:
         provider = get_provider(monitor.blockchain)
         txs = await provider.get_transactions(monitor.wallet_address, limit=25)
     except ProviderError as exc:
-        logger.warning("Monitor %s provider error: %s", monitor.wallet_address, exc.message)
+        if exc.code == "NOT_FOUND":
+            logger.debug("Monitor %s: no on-chain records found (%s)", monitor.wallet_address, exc.message)
+        else:
+            logger.warning("Monitor %s provider error: %s", monitor.wallet_address, exc.message)
         monitor.last_checked = utcnow()
         db.commit()
         return 0

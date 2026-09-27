@@ -28,6 +28,8 @@ class BitcoinProvider(BlockchainProvider):
                 response = await client.get(url)
         except httpx.HTTPError as exc:
             raise ProviderError("PROVIDER_UNAVAILABLE", f"Bitcoin API unreachable: {exc.__class__.__name__}") from exc
+        if response.status_code == 404:
+            raise ProviderError("NOT_FOUND", f"Bitcoin address or resource '{path}' not found on mempool.space.")
         if response.status_code == 429:
             raise ProviderError("PROVIDER_RATE_LIMITED", "Bitcoin API rate limit reached; retry later.")
         if response.status_code >= 400:
@@ -41,7 +43,18 @@ class BitcoinProvider(BlockchainProvider):
         return int(await self._get("/blocks/tip/height"))
 
     async def get_balance(self, address: str) -> dict[str, Any]:
-        data = await self._get(f"/address/{address}")
+        try:
+            data = await self._get(f"/address/{address}")
+        except ProviderError as exc:
+            if exc.code == "NOT_FOUND":
+                return {
+                    "balance": 0.0,
+                    "pending_balance": 0.0,
+                    "asset": self.asset,
+                    "provider": self.name,
+                    "is_demo": False,
+                }
+            raise
         stats = data.get("chain_stats", {})
         mempool = data.get("mempool_stats", {})
         satoshis = stats.get("funded_txo_sum", 0) - stats.get("spent_txo_sum", 0)
@@ -121,18 +134,28 @@ class BitcoinProvider(BlockchainProvider):
 
     async def get_transactions(self, address: str, limit: int = 100) -> list[dict[str, Any]]:
         limit = max(1, min(limit, 200))
-        tip = await self._tip_height()
+        try:
+            tip = await self._tip_height()
+            first_page = await self._get(f"/address/{address}/txs")
+        except ProviderError as exc:
+            if exc.code == "NOT_FOUND":
+                return []
+            raise
+
         raw_txs: list[dict] = []
-        first_page = await self._get(f"/address/{address}/txs")
-        raw_txs.extend(first_page)
-        last_txid = first_page[-1]["txid"] if first_page else None
+        if isinstance(first_page, list):
+            raw_txs.extend(first_page)
+        last_txid = first_page[-1]["txid"] if (isinstance(first_page, list) and first_page) else None
         while len(raw_txs) < limit and last_txid:
-            page = await self._get(f"/address/{address}/txs/chain/{last_txid}")
-            if not page:
+            try:
+                page = await self._get(f"/address/{address}/txs/chain/{last_txid}")
+                if not isinstance(page, list) or not page:
+                    break
+                raw_txs.extend(page)
+                last_txid = page[-1]["txid"]
+                await asyncio.sleep(0.15)  # polite pagination
+            except ProviderError:
                 break
-            raw_txs.extend(page)
-            last_txid = page[-1]["txid"]
-            await asyncio.sleep(0.15)  # polite pagination
 
         normalized: list[dict] = []
         seen: set[str] = set()
@@ -148,7 +171,6 @@ class BitcoinProvider(BlockchainProvider):
     async def get_transaction(self, tx_hash: str) -> dict[str, Any]:
         raw = await self._get(f"/tx/{tx_hash}")
         tip = await self._tip_height()
-        # Normalize against the first input/output addresses.
         raw_copy = dict(raw)
         item = await self._normalize(raw_copy, tip, address=None)
         if item is None:
@@ -169,7 +191,12 @@ class BitcoinProvider(BlockchainProvider):
         }
 
     async def get_address_activity(self, address: str) -> dict[str, Any]:
-        data = await self._get(f"/address/{address}")
+        try:
+            data = await self._get(f"/address/{address}")
+        except ProviderError as exc:
+            if exc.code == "NOT_FOUND":
+                return {"first_seen": None, "last_seen": None, "tx_count": 0, "is_demo": False}
+            raise
         chain = data.get("chain_stats", {})
         mempool = data.get("mempool_stats", {})
         tx_count = chain.get("tx_count", 0) + mempool.get("tx_count", 0)

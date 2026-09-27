@@ -271,13 +271,13 @@ def seed_db(db: Session) -> None:
         created_at=now - timedelta(hours=5),
     )
     mw1 = MonitoredWallet(
-        wallet_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
+        wallet_address="34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
         blockchain="bitcoin",
-        label="WannaCry Treasury Watch",
+        label="Binance Cold Treasury Watch",
         rules={"notify_on_transfer": True, "min_amount": 0.5},
         status="ACTIVE",
         last_checked=now - timedelta(minutes=5),
-        last_tx_hash="a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d",
+        last_tx_hash=None,
         is_demo=True,
     )
     db.add_all([a1, a2, mw1])
