@@ -51,7 +51,7 @@ KNOWN_ENTITIES = {
     "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo": {"label": "Binance Cold Wallet", "category": "Suspicious Service", "source": "Binance Infrastructure"},
     "bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr": {"label": "Bitfinex Cold Storage", "category": "Suspicious Service", "source": "Bitfinex Infrastructure"},
     "1P5ZEDWTKTFGxQjZphgWPQUpe554WKDfHQ": {"label": "Binance Hot Wallet 1", "category": "Suspicious Service", "source": "Binance Infrastructure"},
-    # EVM Exchanges & Mixers
+    # EVM Exchanges & Mixers & Exploits
     "0x28c6c06298d514db089934071355e5743bf21d60": {"label": "Binance 14 (Hot Wallet)", "category": "Suspicious Service", "source": "Binance EVM"},
     "0x7160ec9412b075c370e8550c5412469959779e9e": {"label": "Coinbase 1 (Hot Wallet)", "category": "Suspicious Service", "source": "Coinbase EVM"},
     "0x47ac0fb4f2d84898e4d9e7b4dab3c24507a6d503": {"label": "Binance Hot Wallet 6", "category": "Suspicious Service", "source": "Binance EVM"},
@@ -61,6 +61,13 @@ KNOWN_ENTITIES = {
     "0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936": {"label": "Tornado.Cash 1 ETH Mixer", "category": "Mixer", "source": "OFAC Sanctions List"},
     "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf": {"label": "Tornado.Cash 10 ETH Mixer", "category": "Mixer", "source": "OFAC Sanctions List"},
     "0xa160cd373370618f30b240960c381d650eb19b0d": {"label": "Tornado.Cash 100 ETH Mixer", "category": "Mixer", "source": "OFAC Sanctions List"},
+    "0x098b716b8aaf21512996dc57eb0615e2383e2f96": {"label": "Ronin Bridge $620M Exploit (Lazarus Group)", "category": "Exploit", "source": "FBI / Cyber Crime Alert"},
+    "0x50d1c9771902476076ecfc8b2a83ad6b9355a4c9": {"label": "FTX Accounts Drainer / Hacker", "category": "Exploit", "source": "Exchange Breach Incident"},
+    "0x444d852655513ab4a88f73a3aa5fe9422df56e92": {"label": "BSC Token Hub Drainer ($570M Hack)", "category": "Exploit", "source": "BNB Chain Security Alert"},
+    "0x3c783c21a0383057d128bae3314a4e461721b765": {"label": "Polygon ERC20 Bridge Vault", "category": "Suspicious Service", "source": "Polygon Protocol Registry"},
+    # Solana Threats
+    "5vcwktptjphupybwxsyjhayhotrbjv49d3p48jkbfe3f": {"label": "FTX Solana Drainer Address", "category": "Exploit", "source": "Solana Incident Registry"},
+    "4k3dyjzvzp8emzwuxbcjevwskkk59s5icnly3qrke3r": {"label": "Raydium Liquidity Pool Authority", "category": "Suspicious Service", "source": "Solana Protocol Registry"},
 }
 
 

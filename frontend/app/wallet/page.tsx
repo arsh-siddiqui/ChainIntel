@@ -10,7 +10,7 @@ import { FileText, FolderLock, GitFork, Search, ShieldCheck } from "lucide-react
 import { api, ApiError, explorerUrl } from "@/lib/api";
 import { useInvestigation, PIPELINE_STEPS } from "@/hooks/use-investigation";
 import { Button, Card, CardHeader, Input, Select, Spinner, Badge, EmptyState } from "@/components/common/ui";
-import { CHAIN_OPTIONS } from "@/lib/constants";
+import { CHAIN_OPTIONS, DEMO_TARGET_PRESETS } from "@/lib/constants";
 import { WalletOverview } from "@/components/wallet/wallet-overview";
 import { ThreatBanner } from "@/components/wallet/threat-banner";
 import { RiskPanel } from "@/components/wallet/risk-panel";
@@ -105,6 +105,33 @@ function InvestigateForm({ onSubmit, isLoading, defaultAddress }: { onSubmit: (a
           Run Investigation
         </Button>
       </div>
+
+      <div className="pt-1">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="font-mono text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mr-1">
+            DEMO TARGET PRESETS:
+          </span>
+          {DEMO_TARGET_PRESETS.map((preset) => (
+            <button
+              key={preset.address}
+              type="button"
+              onClick={() => {
+                setAddress(preset.address);
+                setChain(preset.chain);
+                onSubmit(preset.address, preset.chain);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-[11px] font-medium text-slate-700 hover:border-sky-500 hover:bg-sky-50 hover:text-sky-700 transition-colors dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-sky-500 dark:hover:bg-sky-950/40"
+              title={`Investigate ${preset.label} (${preset.address})`}
+            >
+              <span>{preset.label}</span>
+              <span className="rounded bg-slate-100 px-1 py-0.2 text-[9px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                {preset.badge}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <p className="text-[11px] font-mono text-slate-400">
         Direct Blockchain Node verification · Bitcoin (keyless live mempool/UTXO) · Ethereum/BSC (multichain RPC)
       </p>

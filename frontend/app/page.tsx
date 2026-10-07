@@ -20,6 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
+import { DEMO_TARGET_PRESETS } from "@/lib/constants";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -147,6 +148,27 @@ export default function LandingPage() {
             <span>Investigate Now</span>
           </button>
         </motion.form>
+
+        {/* Curated Demo Target Presets */}
+        <div className="mt-5 max-w-3xl mx-auto flex flex-wrap items-center justify-center gap-2 text-xs">
+          <span className="font-mono text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mr-1">
+            DEMO TARGETS:
+          </span>
+          {DEMO_TARGET_PRESETS.slice(0, 6).map((preset) => (
+            <button
+              key={preset.address}
+              type="button"
+              onClick={() => router.push(`/wallet?address=${encodeURIComponent(preset.address)}`)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 font-mono text-[11px] font-medium text-slate-700 hover:border-sky-500 hover:bg-sky-50 hover:text-sky-700 transition-all shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-cyan-400 dark:hover:bg-cyan-950/40"
+              title={`Investigate ${preset.label} (${preset.address})`}
+            >
+              <span>{preset.label}</span>
+              <span className="rounded bg-slate-100 px-1 py-0.2 text-[9px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                {preset.badge}
+              </span>
+            </button>
+          ))}
+        </div>
 
         {/* Feature Badges */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-slate-500 dark:text-slate-400">

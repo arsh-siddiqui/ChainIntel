@@ -109,3 +109,55 @@ export const OSINT_STATUS_STYLES: Record<string, string> = {
   ERROR: "bg-red-50 text-red-700 border-red-200",
   REQUIRES_CONFIGURATION: "bg-amber-50 text-amber-700 border-amber-200",
 };
+
+export const DEMO_TARGET_PRESETS = [
+  {
+    label: "Tornado.Cash 0.1 ETH Mixer",
+    address: "0x12d6621e19a95080e0276664261065623b1a0623",
+    chain: "ethereum",
+    badge: "Mixer / OFAC",
+  },
+  {
+    label: "Ronin $620M Exploit (Lazarus)",
+    address: "0x098b716b8aaf21512996dc57eb0615e2383e2f96",
+    chain: "ethereum",
+    badge: "Exploit / Hack",
+  },
+  {
+    label: "Vitalik Buterin (vitalik.eth)",
+    address: "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+    chain: "ethereum",
+    badge: "ENS / Public",
+  },
+  {
+    label: "Binance 14 Hot Wallet",
+    address: "0x28c6c06298d514db089934071355e5743bf21d60",
+    chain: "ethereum",
+    badge: "Exchange CEX",
+  },
+  {
+    label: "Bitfinex Cold Storage",
+    address: "bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr",
+    chain: "bitcoin",
+    badge: "BTC Exchange",
+  },
+  {
+    label: "Satoshi Genesis Address",
+    address: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+    chain: "bitcoin",
+    badge: "BTC Genesis",
+  },
+  {
+    label: "BSC Token Hub Drainer",
+    address: "0x444d852655513ab4a88f73a3aa5fe9422df56e92",
+    chain: "bsc",
+    badge: "BSC Exploit",
+  },
+  {
+    label: "FTX Solana Drainer",
+    address: "5VCwKtPtjPhuPyBWxSyjhayHotRbjV49d3p48JkbfE3f",
+    chain: "solana",
+    badge: "SOL Drainer",
+  },
+] as const;
+
