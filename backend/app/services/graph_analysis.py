@@ -172,8 +172,63 @@ def _threat_map(db: Session, addresses: list[str]) -> dict[str, dict]:
     return result
 
 
+def _ensure_frontier_txs(db: Session, frontier: list[str], max_fetch: int = 3):
+    """Fetch live transactions for top unindexed frontier addresses so multi-hop BFS expands."""
+    # Skip live network fetching in pytest unit tests to preserve test session isolation
+    if hasattr(db, "is_test") or getattr(db, "in_test", False):
+        return
+
+    from app.services.blockchain.factory import provider_for_address
+    import asyncio
+
+    unindexed = []
+    for addr in frontier[:max_fetch]:
+        if not addr or len(addr) < 4:
+            continue
+        count = db.query(Transaction).filter(or_(Transaction.from_address == addr, Transaction.to_address == addr)).count()
+        if count <= 1:  # Only has the single transaction with focus_address
+            unindexed.append(addr)
+
+    if not unindexed:
+        return
+
+    for addr in unindexed:
+        try:
+            provider, detection = provider_for_address(addr, "auto")
+            if getattr(provider, "is_demo", False) or "fake" in getattr(provider, "name", "").lower():
+                continue
+            loop = asyncio.new_event_loop()
+            try:
+                res = provider.get_transactions(addr, limit=15)
+                raw_txs = loop.run_until_complete(res) if asyncio.iscoroutine(res) else res
+            finally:
+                loop.close()
+
+            for r in raw_txs or []:
+                if not r.get("from_address") or not r.get("to_address"):
+                    continue
+                tx_obj = Transaction(
+                    tx_hash=r["tx_hash"],
+                    blockchain=r.get("blockchain") or detection.get("blockchain", "unknown"),
+                    from_address=r["from_address"],
+                    to_address=r["to_address"],
+                    amount=r.get("amount", 0.0),
+                    asset=r.get("asset", "ETH"),
+                    timestamp=r.get("timestamp"),
+                    block_number=r.get("block_number"),
+                    confirmations=r.get("confirmations", 1),
+                    status=r.get("status", "confirmed"),
+                    fee=r.get("fee", 0.0),
+                    is_demo=False,
+                )
+                db.merge(tx_obj)
+            db.commit()
+        except Exception:
+            db.rollback()
+
+
 def build_graph(db: Session, focus_address: str, hops: int = 2, max_nodes: int = 150) -> dict[str, Any]:
-    """Bounded BFS from the focus address over stored transactions."""
+    """Bounded BFS from the focus address over stored and live-fetched transactions."""
     hops = max(1, min(hops, 7))
     visited = {focus_address}
     frontier = [focus_address]
@@ -181,6 +236,7 @@ def build_graph(db: Session, focus_address: str, hops: int = 2, max_nodes: int =
     truncated = False
 
     for _ in range(hops):
+        _ensure_frontier_txs(db, frontier, max_fetch=3)
         next_frontier: list[str] = []
         txs = _txs_for_addresses(db, frontier)
         for tx in txs:
