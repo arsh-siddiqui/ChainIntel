@@ -75,11 +75,13 @@ def test_trace_unreachable_target(client, monkeypatch):
 
 
 def test_trace_clean_wallet(client, monkeypatch):
-    _seed(client, monkeypatch)
+    clean_addr = "1CleanTestWalletNoThreatsPresent99"
+    install_fake_provider(monkeypatch, "bitcoin")
+    client.post("/api/wallets/investigate", json={"address": clean_addr})
     response = client.post(
         "/api/graph/trace",
-        json={"wallet_address": BTC_ADDRESS, "direction": "outgoing", "max_hops": 3},
+        json={"wallet_address": clean_addr, "direction": "outgoing", "max_hops": 3},
     )
     trace = response.json()["data"]
-    # Clean database: no threat records, so nothing is flagged.
+    # Clean wallet: no threat records, so no suspicious nodes are flagged.
     assert trace["suspicious_nodes"] == []

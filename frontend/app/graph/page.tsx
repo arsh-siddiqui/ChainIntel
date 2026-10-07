@@ -1,6 +1,5 @@
-"use client";
-
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Route, Search, ShieldAlert } from "lucide-react";
@@ -13,15 +12,24 @@ import type { GraphData, TraceResult } from "@/types";
 
 const NODE_TYPES = ["victim", "wallet", "ransomware", "scam", "exchange", "mixer", "intermediate", "aggregator", "unknown"] as const;
 
-export default function GraphPage() {
-  const [source, setSource] = useState("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
-  const [appliedSource, setAppliedSource] = useState("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa");
+function GraphInner() {
+  const searchParams = useSearchParams();
+  const addressParam = searchParams.get("address") ?? "0x12d6621e19a95080e0276664261065623b1a0623";
+  const [source, setSource] = useState(addressParam);
+  const [appliedSource, setAppliedSource] = useState(addressParam);
   const [hops, setHops] = useState(3);
   const [showAmounts, setShowAmounts] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
   const [trace, setTrace] = useState<TraceResult | null>(null);
   const [traceForm, setTraceForm] = useState({ target: "", direction: "outgoing", max_hops: 4 });
+
+  useEffect(() => {
+    if (addressParam) {
+      setSource(addressParam);
+      setAppliedSource(addressParam);
+    }
+  }, [addressParam]);
 
   const { data: graph, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["graph", appliedSource, hops],
@@ -127,8 +135,20 @@ export default function GraphPage() {
             })}
           </div>
 
-          <div className="flex items-center gap-1 text-[11px] text-slate-400">
-            <span>Presets:</span>
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+            <span className="font-mono text-[10px] font-bold uppercase text-slate-500">Presets:</span>
+            <button
+              type="button"
+              onClick={() => {
+                const a = "0x12d6621e19a95080e0276664261065623b1a0623";
+                setSource(a);
+                setAppliedSource(a);
+                setTrace(null);
+              }}
+              className="rounded border border-purple-200 bg-purple-50 px-2 py-0.5 font-mono text-[10px] font-bold text-purple-700 hover:bg-purple-100 dark:border-purple-900 dark:bg-purple-950/80 dark:text-purple-300 transition-colors"
+            >
+              Tornado Cash Mixer
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -137,33 +157,45 @@ export default function GraphPage() {
                 setAppliedSource(a);
                 setTrace(null);
               }}
-              className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-ink"
+              className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-800 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/80 dark:text-amber-300 transition-colors"
             >
               Satoshi Genesis
             </button>
             <button
               type="button"
               onClick={() => {
-                const a = "12ib7dApVFvg82TXKycWBNpN8kFyiAN1dr";
+                const a = "0x098b716b8aaf21512996dc57eb0615e2383e2f96";
                 setSource(a);
                 setAppliedSource(a);
                 setTrace(null);
               }}
-              className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-ink"
+              className="rounded border border-rose-200 bg-rose-50 px-2 py-0.5 font-mono text-[10px] font-bold text-rose-700 hover:bg-rose-100 dark:border-rose-900 dark:bg-rose-950/80 dark:text-rose-300 transition-colors"
             >
-              WannaCry
+              Ronin Hack ($620M)
             </button>
             <button
               type="button"
               onClick={() => {
-                const a = "1NDyJtNTjmwk5xPNhjgAMu4HDHigtobu1s";
+                const a = "19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P";
                 setSource(a);
                 setAppliedSource(a);
                 setTrace(null);
               }}
-              className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-ink"
+              className="rounded border border-red-200 bg-red-50 px-2 py-0.5 font-mono text-[10px] font-bold text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950/80 dark:text-red-300 transition-colors"
             >
-              Binance Exploit
+              WannaCry Ransomware
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const a = "0x28c6c06298d514db089934071355e5743bf21d60";
+                setSource(a);
+                setAppliedSource(a);
+                setTrace(null);
+              }}
+              className="rounded border border-teal-200 bg-teal-50 px-2 py-0.5 font-mono text-[10px] font-bold text-teal-700 hover:bg-teal-100 dark:border-teal-900 dark:bg-teal-950/80 dark:text-teal-300 transition-colors"
+            >
+              Binance Hot Wallet
             </button>
           </div>
         </div>
@@ -345,5 +377,13 @@ export default function GraphPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GraphPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs font-mono text-slate-400">Loading Graph Engine…</div>}>
+      <GraphInner />
+    </Suspense>
   );
 }

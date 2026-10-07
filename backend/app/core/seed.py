@@ -21,306 +21,260 @@ from app.utils.datetime import utcnow
 
 
 def seed_db(db: Session) -> None:
-    # Only seed if database has no wallets
-    if db.query(Wallet).first() is not None:
+    # If database already has full seed data, return
+    if db.query(ThreatFinding).count() >= 5 and db.query(Transaction).count() >= 8:
         return
 
     now = utcnow()
 
-    # 1. Wallets
-    w1 = Wallet(
-        address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
-        blockchain="bitcoin",
-        label="WannaCry Ransomware Treasury",
-        balance=14.582,
-        asset="BTC",
-        first_seen=now - timedelta(days=120),
-        last_seen=now - timedelta(hours=2),
-        transaction_count=42,
-        is_demo=True,
-    )
-    w2 = Wallet(
-        address="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
-        blockchain="bitcoin",
-        label="Satoshi Genesis Address",
-        balance=50.0,
-        asset="BTC",
-        first_seen=now - timedelta(days=3000),
-        last_seen=now - timedelta(days=100),
-        transaction_count=18,
-        is_demo=True,
-    )
-    w3 = Wallet(
-        address="34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
-        blockchain="bitcoin",
-        label="Binance Cold Storage",
-        balance=24800.12,
-        asset="BTC",
-        first_seen=now - timedelta(days=800),
-        last_seen=now - timedelta(minutes=15),
-        transaction_count=15200,
-        is_demo=True,
-    )
-    w4 = Wallet(
-        address="0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-        blockchain="ethereum",
-        label="vitalik.eth",
-        balance=1420.5,
-        asset="ETH",
-        first_seen=now - timedelta(days=1500),
-        last_seen=now - timedelta(hours=1),
-        transaction_count=892,
-        is_demo=True,
-    )
-    w5 = Wallet(
-        address="0x077d37a6553a309b888824e0373809071c356f9a",
-        blockchain="ethereum",
-        label="Flagged Mixer Deposit Router",
-        balance=8.45,
-        asset="ETH",
-        first_seen=now - timedelta(days=45),
-        last_seen=now - timedelta(minutes=30),
-        transaction_count=134,
-        is_demo=True,
-    )
-    db.add_all([w1, w2, w3, w4, w5])
+    # Helper function to get or create wallet
+    def get_or_create_wallet(address: str, chain: str, label: str, balance: float, asset: str) -> Wallet:
+        existing = db.query(Wallet).filter(Wallet.address == address).first()
+        if existing:
+            return existing
+        w = Wallet(
+            address=address,
+            blockchain=chain,
+            label=label,
+            balance=balance,
+            asset=asset,
+            first_seen=now - timedelta(days=365),
+            last_seen=now - timedelta(hours=1),
+            transaction_count=25,
+            is_demo=True,
+        )
+        db.add(w)
+        return w
+
+    # 1. Target & Counterparty Wallets
+    w_tornado = get_or_create_wallet("0x12d6621e19a95080e0276664261065623b1a0623", "ethereum", "Tornado.Cash 0.1 ETH Mixer", 845.5, "ETH")
+    w_satoshi = get_or_create_wallet("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "bitcoin", "Satoshi Nakamoto Genesis", 50.0, "BTC")
+    w_wannacry = get_or_create_wallet("19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P", "bitcoin", "WannaCry Ransomware Treasury", 14.58, "BTC")
+    w_binance_btc = get_or_create_wallet("34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo", "bitcoin", "Binance Cold Storage", 24800.12, "BTC")
+    w_bitfinex_btc = get_or_create_wallet("bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr", "bitcoin", "Bitfinex Cold Storage", 18500.0, "BTC")
+    w_vitalik = get_or_create_wallet("0xd8da6bf26964af9d7eed9e03e53415d37aa96045", "ethereum", "vitalik.eth", 1420.5, "ETH")
+    w_binance_eth = get_or_create_wallet("0x28c6c06298d514db089934071355e5743bf21d60", "ethereum", "Binance 14 (Hot Wallet)", 15420.0, "ETH")
+    w_ronin = get_or_create_wallet("0x098b716b8aaf21512996dc57eb0615e2383e2f96", "ethereum", "Ronin Bridge $620M Exploit (Lazarus)", 17400.0, "ETH")
+    w_ftx = get_or_create_wallet("0x50d1c9771902476076ecfc8b2a83ad6b9355a4c9", "ethereum", "FTX Accounts Drainer", 9420.0, "ETH")
+    w_proxy = get_or_create_wallet("0x077d37a6553a309b888824e0373809071c356f9a", "ethereum", "Mixer Deposit Router", 8.45, "ETH")
+    w_coinbase = get_or_create_wallet("0x7160ec9412b075c370e8550c5412469959779e9e", "ethereum", "Coinbase 1 (Hot Wallet)", 28900.0, "ETH")
     db.commit()
 
-    # 2. Transactions
-    txs = [
-        Transaction(
-            tx_hash="a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d",
-            blockchain="bitcoin",
-            from_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
-            to_address="34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
-            amount=2.5,
-            asset="BTC",
-            timestamp=now - timedelta(hours=3),
-            block_number=834521,
-            confirmations=6,
-            status="confirmed",
-            fee=0.00015,
-            is_demo=True,
-        ),
-        Transaction(
-            tx_hash="f5d48d9a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d",
-            blockchain="bitcoin",
-            from_address="34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
-            to_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
-            amount=5.0,
-            asset="BTC",
-            timestamp=now - timedelta(days=1),
-            block_number=834400,
-            confirmations=144,
-            status="confirmed",
-            fee=0.00021,
-            is_demo=True,
-        ),
-        Transaction(
-            tx_hash="0x9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b",
-            blockchain="ethereum",
-            from_address="0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-            to_address="0x077d37a6553a309b888824e0373809071c356f9a",
-            amount=1.2,
-            asset="ETH",
-            timestamp=now - timedelta(hours=5),
-            block_number=19451200,
-            confirmations=120,
-            status="confirmed",
-            fee=0.0035,
-            is_demo=True,
-        ),
-        Transaction(
-            tx_hash="0x1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c",
-            blockchain="ethereum",
-            from_address="0x077d37a6553a309b888824e0373809071c356f9a",
-            to_address="0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-            amount=4.8,
-            asset="ETH",
-            timestamp=now - timedelta(days=2),
-            block_number=19438000,
-            confirmations=1400,
-            status="confirmed",
-            fee=0.0042,
-            is_demo=True,
-        ),
+    # 2. Multi-Hop Graph Transactions (Connecting all target presets!)
+    tx_list = [
+        # Bitcoin Graph (Satoshi Genesis -> Bitfinex -> Binance)
+        ("tx_btc_1", "bitcoin", "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo", 10.0, "BTC", 3),
+        ("tx_btc_2", "bitcoin", "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo", "bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr", 5.5, "BTC", 6),
+        ("tx_btc_3", "bitcoin", "19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P", "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo", 2.5, "BTC", 12),
+        ("tx_btc_4", "bitcoin", "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P", 1.25, "BTC", 24),
+        ("tx_btc_5", "bitcoin", "bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr", "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", 0.5, "BTC", 48),
+
+        # Ethereum Graph (Tornado Cash <-> Deposit Router <-> Vitalik <-> Binance <-> Ronin <-> FTX)
+        ("tx_eth_1", "ethereum", "0x50d1c9771902476076ecfc8b2a83ad6b9355a4c9", "0x12d6621e19a95080e0276664261065623b1a0623", 50.0, "ETH", 2),
+        ("tx_eth_2", "ethereum", "0x098b716b8aaf21512996dc57eb0615e2383e2f96", "0x077d37a6553a309b888824e0373809071c356f9a", 100.0, "ETH", 4),
+        ("tx_eth_3", "ethereum", "0x077d37a6553a309b888824e0373809071c356f9a", "0x12d6621e19a95080e0276664261065623b1a0623", 98.5, "ETH", 5),
+        ("tx_eth_4", "ethereum", "0x12d6621e19a95080e0276664261065623b1a0623", "0x28c6c06298d514db089934071355e5743bf21d60", 45.0, "ETH", 8),
+        ("tx_eth_5", "ethereum", "0xd8da6bf26964af9d7eed9e03e53415d37aa96045", "0x077d37a6553a309b888824e0373809071c356f9a", 2.5, "ETH", 10),
+        ("tx_eth_6", "ethereum", "0x28c6c06298d514db089934071355e5743bf21d60", "0x7160ec9412b075c370e8550c5412469959779e9e", 120.0, "ETH", 15),
+        ("tx_eth_7", "ethereum", "0x098b716b8aaf21512996dc57eb0615e2383e2f96", "0x50d1c9771902476076ecfc8b2a83ad6b9355a4c9", 300.0, "ETH", 20),
+        ("tx_eth_8", "ethereum", "0x12d6621e19a95080e0276664261065623b1a0623", "0xd8da6bf26964af9d7eed9e03e53415d37aa96045", 10.0, "ETH", 30),
     ]
-    db.add_all(txs)
+
+    for tx_hash, chain, from_a, to_a, amt, asset, hours_ago in tx_list:
+        if not db.query(Transaction).filter(Transaction.tx_hash == tx_hash).first():
+            db.add(
+                Transaction(
+                    tx_hash=tx_hash if chain == "bitcoin" else f"0x{tx_hash}99887766554433221100aabbccddeeff",
+                    blockchain=chain,
+                    from_address=from_a,
+                    to_address=to_a,
+                    amount=amt,
+                    asset=asset,
+                    timestamp=now - timedelta(hours=hours_ago),
+                    block_number=19450000 if chain == "ethereum" else 834500,
+                    confirmations=12,
+                    status="confirmed",
+                    fee=0.002,
+                    is_demo=True,
+                )
+            )
     db.commit()
 
-    # 3. Threat Findings
-    t1 = ThreatFinding(
-        wallet_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
-        blockchain="bitcoin",
-        category="Ransomware",
-        label="WannaCry Extortion Wallet",
-        source="Cryptocurrency Threat Intelligence DB",
-        reference_url="https://threatintel.example.org/records/WANNACRY-001",
-        confidence=0.95,
-        first_seen=now - timedelta(days=120),
-        last_seen=now - timedelta(hours=2),
-        notes="High-risk wallet associated with ransomware ransom collections.",
-        status="VERIFIED",
-        is_demo=True,
-    )
-    t2 = ThreatFinding(
-        wallet_address="0x077d37a6553a309b888824e0373809071c356f9a",
-        blockchain="ethereum",
-        category="Suspicious Service",
-        label="Tornado.Cash Deposit Proxy",
-        source="OFAC Sanctions & Mixer Watchlist",
-        reference_url="https://sanctions.example.org/details/ETH-MIXER-99",
-        confidence=0.88,
-        first_seen=now - timedelta(days=45),
-        last_seen=now - timedelta(minutes=30),
-        notes="Flagged privacy protocol contract for illicit asset obfuscation.",
-        status="VERIFIED",
-        is_demo=True,
-    )
-    db.add_all([t1, t2])
+    # 3. Rich Threat Intelligence Matrix Records (All Categories)
+    threat_records = [
+        ("0x12d6621e19a95080e0276664261065623b1a0623", "ethereum", "Suspicious Service", "Tornado.Cash 0.1 ETH Mixer", "OFAC Sanctions & Watchlist", "https://sanctions.example.org/records/OFAC-ETH-MIXER-01", 0.99, "OFAC sanctioned privacy protocol smart contract."),
+        ("0x098b716b8aaf21512996dc57eb0615e2383e2f96", "ethereum", "Exploit", "Ronin Bridge $620M Exploit (Lazarus)", "FBI / Cyber Crime Alert", "https://threatintel.example.org/records/RONIN-EXPLOIT", 0.99, "State-sponsored cyber attack on Axie Infinity Ronin validator keys."),
+        ("19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P", "bitcoin", "Ransomware", "WannaCry Ransomware Treasury", "Cryptocurrency Threat DB", "https://threatintel.example.org/records/WANNACRY-001", 0.95, "Extortion wallet associated with global ransomware campaign."),
+        ("0x50d1c9771902476076ecfc8b2a83ad6b9355a4c9", "ethereum", "Exploit", "FTX Accounts Drainer / Hacker", "Exchange Breach Incident", "https://threatintel.example.org/records/FTX-DRAINER", 0.98, "Unauthorized siphoning of exchange treasury funds during bankruptcy filing."),
+        ("0x444d852655513ab4a88f73a3aa5fe9422df56e92", "bsc", "Exploit", "BSC Token Hub Drainer ($570M Hack)", "BNB Chain Security Advisory", "https://threatintel.example.org/records/BSC-DRAINER", 0.97, "Cross-chain bridge forgery exploit target."),
+        ("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "bitcoin", "Blacklist", "Satoshi Nakamoto Genesis Address", "Bitcoin Genesis Block", "https://mempool.space/address/1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", 0.99, "Genesis block reward destination address."),
+        ("bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr", "bitcoin", "Suspicious Service", "Bitfinex Cold Storage", "Bitfinex Infrastructure", "https://mempool.space/address/bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr", 0.96, "High-value exchange cold storage vault."),
+        ("0x28c6c06298d514db089934071355e5743bf21d60", "ethereum", "Suspicious Service", "Binance 14 (Hot Wallet)", "Binance EVM Registry", "https://etherscan.io/address/0x28c6c06298d514db089934071355e5743bf21d60", 0.99, "Active exchange hot liquidity wallet."),
+        ("0x077d37a6553a309b888824e0373809071c356f9a", "ethereum", "Phishing", "Phishing Router & Fake Claim Contract", "Etherscan Anti-Abuse", "https://etherscan.io/address/0x077d37a6553a309b888824e0373809071c356f9a", 0.91, "AirDrop drainer contract deploying malformed approvals."),
+        ("5VCwKtPtjPhuPyBWxSyjhayHotRbjV49d3p48JkbfE3f", "solana", "Exploit", "FTX Solana Drainer Address", "Solana Incident Registry", "https://solscan.io/account/5VCwKtPtjPhuPyBWxSyjhayHotRbjV49d3p48JkbfE3f", 0.95, "Solana account drainer contract."),
+    ]
+
+    for addr, chain, cat, lbl, src, ref, conf, notes in threat_records:
+        if not db.query(ThreatFinding).filter(ThreatFinding.wallet_address == addr, ThreatFinding.category == cat).first():
+            db.add(
+                ThreatFinding(
+                    wallet_address=addr,
+                    blockchain=chain,
+                    category=cat,
+                    label=lbl,
+                    source=src,
+                    reference_url=ref,
+                    confidence=conf,
+                    first_seen=now - timedelta(days=60),
+                    last_seen=now - timedelta(hours=1),
+                    notes=notes,
+                    status="VERIFIED",
+                    is_demo=True,
+                )
+            )
     db.commit()
 
     # 4. OSINT Findings
-    o1 = OSINTFinding(
-        wallet_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
-        source="BitcoinTalk Forum",
-        source_category="public",
-        record_type="IMPORTED_INTELLIGENCE",
-        finding="Address reported in extortion thread #8821",
-        status="FOUND",
-        confidence=0.9,
-        reference_url="https://bitcointalk.org",
-        notes="Multiple users confirmed ransom demand sent to this address.",
-        observed_at=now - timedelta(days=100),
-        is_demo=True,
-    )
-    o2 = OSINTFinding(
-        wallet_address="0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
-        source="ENS Registry",
-        source_category="public",
-        record_type="VERIFIED_SOURCE",
-        finding="Resolved ENS domain: vitalik.eth",
-        status="FOUND",
-        confidence=1.0,
-        reference_url="https://app.ens.domains",
-        notes="Public identity domain for Vitalik Buterin.",
-        observed_at=now - timedelta(days=500),
-        is_demo=True,
-    )
-    db.add_all([o1, o2])
+    osint_records = [
+        ("19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P", "BitcoinTalk Forum", "public", "IMPORTED_INTELLIGENCE", "Address reported in ransomware extortion thread #8821", "FOUND", 0.90, "https://bitcointalk.org", "Multiple users confirmed ransom demand sent to this address."),
+        ("0xd8da6bf26964af9d7eed9e03e53415d37aa96045", "ENS Registry", "public", "VERIFIED_SOURCE", "Resolved ENS domain: vitalik.eth", "FOUND", 1.0, "https://app.ens.domains", "Public identity domain for Vitalik Buterin."),
+        ("0x12d6621e19a95080e0276664261065623b1a0623", "OFAC Sanctions List", "public", "VERIFIED_SOURCE", "OFAC Specially Designated Nationals List (SDN)", "FOUND", 0.99, "https://home.treasury.gov/policy-issues/financial-sanctions/specially-designated-nationals-and-blocked-persons-list-sdn-human-readable-lists", "Listed on US Treasury OFAC sanctions database."),
+        ("0x098b716b8aaf21512996dc57eb0615e2383e2f96", "FBI Cyber Division Advisory", "public", "VERIFIED_SOURCE", "Identified as Lazarus Group Ronin Exploiter", "FOUND", 0.99, "https://www.fbi.gov", "Attributed to DPRK state-sponsored threat actor."),
+    ]
+
+    for addr, src, cat, rec_type, find, status, conf, ref, notes in osint_records:
+        if not db.query(OSINTFinding).filter(OSINTFinding.wallet_address == addr, OSINTFinding.source == src).first():
+            db.add(
+                OSINTFinding(
+                    wallet_address=addr,
+                    source=src,
+                    source_category=cat,
+                    record_type=rec_type,
+                    finding=find,
+                    status=status,
+                    confidence=conf,
+                    reference_url=ref,
+                    notes=notes,
+                    observed_at=now - timedelta(days=30),
+                    is_demo=True,
+                )
+            )
     db.commit()
 
     # 5. Cases & Case Events
-    c1 = Case(
-        case_number="CASE-2026-001",
-        title="Operation DarkWatch - WannaCry Fund Tracing",
-        description="Investigation into illicit bitcoin flow from ransomware extortion wallet.",
-        status="UNDER_INVESTIGATION",
-        priority="HIGH",
-        investigator="Lead Analyst",
-        created_at=now - timedelta(days=5),
-    )
-    c2 = Case(
-        case_number="CASE-2026-002",
-        title="EVM Exploit Mixer Fund Laundering",
-        description="Tracking stolen protocol assets routed through Tornado Cash proxies.",
-        status="OPEN",
-        priority="CRITICAL",
-        investigator="Senior Forensics Lead",
-        created_at=now - timedelta(days=2),
-    )
-    db.add_all([c1, c2])
-    db.commit()
+    if db.query(Case).count() == 0:
+        c1 = Case(
+            case_number="CASE-2026-001",
+            title="Operation DarkWatch - WannaCry Fund Tracing",
+            description="Investigation into illicit bitcoin flow from ransomware extortion wallet.",
+            status="UNDER_INVESTIGATION",
+            priority="HIGH",
+            investigator="Lead Analyst",
+            created_at=now - timedelta(days=5),
+        )
+        c2 = Case(
+            case_number="CASE-2026-002",
+            title="EVM Exploit Mixer Fund Laundering",
+            description="Tracking stolen protocol assets routed through Tornado Cash proxies.",
+            status="OPEN",
+            priority="CRITICAL",
+            investigator="Senior Forensics Lead",
+            created_at=now - timedelta(days=2),
+        )
+        db.add_all([c1, c2])
+        db.commit()
 
-    ce1 = CaseEvent(
-        case_id=c1.id,
-        event_type="wallet_added",
-        description="Added target wallet 19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P to investigation.",
-        created_at=now - timedelta(days=5),
-    )
-    ce2 = CaseEvent(
-        case_id=c1.id,
-        event_type="evidence_attached",
-        description="Attached transaction execution graph and threat intelligence report.",
-        created_at=now - timedelta(days=3),
-    )
-    db.add_all([ce1, ce2])
-    db.commit()
+        ce1 = CaseEvent(
+            case_id=c1.id,
+            event_type="wallet_added",
+            description="Added target wallet 19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P to investigation.",
+            created_at=now - timedelta(days=5),
+        )
+        ce2 = CaseEvent(
+            case_id=c1.id,
+            event_type="evidence_attached",
+            description="Attached transaction execution graph and threat intelligence report.",
+            created_at=now - timedelta(days=3),
+        )
+        db.add_all([ce1, ce2])
+        db.commit()
 
-    # 6. Alerts & Monitored Wallets
-    a1 = Alert(
-        wallet_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
-        rule={"name": "Large Ransomware Outflow", "threshold": 2.0},
-        transaction_hash="a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d",
-        severity="HIGH",
-        status="NEW",
-        title="Outflow Detected on Flagged Ransomware Wallet",
-        message="Transaction of 2.5 BTC observed to Binance Cold Storage.",
-        is_demo=True,
-        created_at=now - timedelta(hours=3),
-    )
-    a2 = Alert(
-        wallet_address="0x077d37a6553a309b888824e0373809071c356f9a",
-        rule={"name": "Mixer Deposit Alert", "protocol": "Tornado"},
-        transaction_hash="0x9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b",
-        severity="CRITICAL",
-        status="NEW",
-        title="Mixer Deposit Executed",
-        message="Interaction detected with privacy protocol contract.",
-        is_demo=True,
-        created_at=now - timedelta(hours=5),
-    )
-    mw1 = MonitoredWallet(
-        wallet_address="34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
-        blockchain="bitcoin",
-        label="Binance Cold Treasury Watch",
-        rules={"notify_on_transfer": True, "min_amount": 0.5},
-        status="ACTIVE",
-        last_checked=now - timedelta(minutes=5),
-        last_tx_hash=None,
-        is_demo=True,
-    )
-    db.add_all([a1, a2, mw1])
-    db.commit()
+    # 6. Active Alerts & Monitored Wallets (Working out of the box!)
+    if db.query(MonitoredWallet).count() == 0:
+        mw1 = MonitoredWallet(
+            wallet_address="0x12d6621e19a95080e0276664261065623b1a0623",
+            blockchain="ethereum",
+            label="Tornado.Cash 0.1 ETH Mixer Watch",
+            rules={"direction": "any", "amount_threshold": 0.1, "on_threat_match": True, "flagged_counterparty": True},
+            status="ACTIVE",
+            last_checked=now - timedelta(minutes=2),
+            is_demo=True,
+        )
+        mw2 = MonitoredWallet(
+            wallet_address="0x098b716b8aaf21512996dc57eb0615e2383e2f96",
+            blockchain="ethereum",
+            label="Ronin Bridge Hacker Drainer Watch",
+            rules={"direction": "outgoing", "amount_threshold": 1.0, "on_threat_match": True, "flagged_counterparty": True},
+            status="ACTIVE",
+            last_checked=now - timedelta(minutes=5),
+            is_demo=True,
+        )
+        mw3 = MonitoredWallet(
+            wallet_address="34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
+            blockchain="bitcoin",
+            label="Binance Cold Treasury Watch",
+            rules={"direction": "any", "amount_threshold": 5.0, "on_threat_match": False, "flagged_counterparty": True},
+            status="ACTIVE",
+            last_checked=now - timedelta(minutes=10),
+            is_demo=True,
+        )
+        db.add_all([mw1, mw2, mw3])
+        db.commit()
 
-    # 7. Evidence
-    e1 = Evidence(
-        case_id=c1.id,
-        type="Transaction Hash",
-        title="Ransomware Outbound TX",
-        description="2.5 BTC transfer hash log",
-        source="mempool.space",
-        sha256="a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d",
-        size_bytes=1024,
-        content_text="TXID: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d",
-        created_at=now - timedelta(days=3),
-    )
-    db.add(e1)
-    db.commit()
+    if db.query(Alert).count() == 0:
+        a1 = Alert(
+            wallet_address="0x12d6621e19a95080e0276664261065623b1a0623",
+            rule={"direction": "incoming", "amount_threshold": 10.0, "on_threat_match": True},
+            transaction_hash="0xeth_199887766554433221100aabbccddeeff",
+            severity="CRITICAL",
+            status="NEW",
+            title="High-Risk Mixer Deposit Triggered",
+            message="Incoming transfer of 50.0 ETH detected on OFAC sanctioned Tornado Cash proxy from FTX Drainer wallet.",
+            is_demo=True,
+            created_at=now - timedelta(hours=1),
+        )
+        a2 = Alert(
+            wallet_address="0x098b716b8aaf21512996dc57eb0615e2383e2f96",
+            rule={"direction": "outgoing", "amount_threshold": 50.0, "on_threat_match": True},
+            transaction_hash="0xeth_299887766554433221100aabbccddeeff",
+            severity="HIGH",
+            status="NEW",
+            title="Exploit Outflow to Obfuscation Router",
+            message="100.0 ETH transferred from Ronin Hacker wallet to privacy deposit router contract.",
+            is_demo=True,
+            created_at=now - timedelta(hours=3),
+        )
+        a3 = Alert(
+            wallet_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
+            rule={"direction": "outgoing", "amount_threshold": 2.0, "on_threat_match": True},
+            transaction_hash="tx_btc_3",
+            severity="HIGH",
+            status="ACKNOWLEDGED",
+            title="Outflow Detected on Flagged Ransomware Wallet",
+            message="Transaction of 2.5 BTC observed to Binance Cold Storage.",
+            is_demo=True,
+            created_at=now - timedelta(hours=6),
+        )
+        db.add_all([a1, a2, a3])
+        db.commit()
 
-    # 8. Initial Investigation Record
-    inv1 = Investigation(
-        case_id=c1.id,
-        title="Investigation: 19R2w9h5dK...N3m4P",
-        wallet_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
-        blockchain="bitcoin",
-        status="COMPLETED",
-        risk_level="HIGH",
-        risk_score=85.0,
-        investigator="Lead Analyst",
-        notes="Confirmed connection to ransomware extortion activity.",
-        created_at=now - timedelta(days=1),
-    )
-    db.add(inv1)
-    db.commit()
-
-    # 9. Audit Log
+    # 7. Audit Log
     log1 = AuditLog(
-        action="database_initialized",
+        action="database_seeded",
         resource_type="system",
-        resource_id="postgres_seed",
+        resource_id="chainintel_seed",
         investigator="System",
-        metadata_json={"seed_wallets": 5, "seed_transactions": 4, "seed_cases": 2},
+        metadata_json={"seeded_wallets": 10, "seeded_threats": 10, "seeded_alerts": 3},
         timestamp=now,
     )
     db.add(log1)
