@@ -30,6 +30,8 @@ EXPLORER_URLS = {
     "bitcoin": "https://mempool.space/address/{address}",
     "ethereum": "https://etherscan.io/address/{address}",
     "bsc": "https://bscscan.com/address/{address}",
+    "polygon": "https://polygonscan.com/address/{address}",
+    "solana": "https://solscan.io/account/{address}",
 }
 
 PIPELINE_STEPS = [

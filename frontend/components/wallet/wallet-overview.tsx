@@ -28,7 +28,22 @@ export function WalletOverview({ wallet }: { wallet: WalletSummary }) {
     setTimeout(() => setCopied(false), 1600);
   };
 
-  const isBtc = wallet.blockchain.toLowerCase() === "bitcoin";
+  const getExplorerLabel = (chain: string) => {
+    switch (chain?.toLowerCase()) {
+      case "bitcoin":
+        return "MEMPOOL EXPLORER";
+      case "ethereum":
+        return "ETHERSCAN EXPLORER";
+      case "bsc":
+        return "BSCSCAN EXPLORER";
+      case "polygon":
+        return "POLYGONSCAN EXPLORER";
+      case "solana":
+        return "SOLSCAN EXPLORER";
+      default:
+        return "BLOCK EXPLORER";
+    }
+  };
 
   return (
     <div className="console-panel rounded-lg overflow-hidden">
@@ -74,7 +89,7 @@ export function WalletOverview({ wallet }: { wallet: WalletSummary }) {
                 className="inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-3 py-1.5 font-mono text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
               >
                 <ExternalLink size={12} />
-                <span>MEMPOOL EXPLORER</span>
+                <span>{getExplorerLabel(wallet.blockchain)}</span>
               </a>
             )}
           </div>
