@@ -52,7 +52,7 @@ FastAPI backend (:8000)
 
 Every API response uses a consistent envelope: `{ "success": true|false, "data": …, "meta": …, "error": … }`.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+For detailed specifications, see [docs/SYSTEM_DESIGN.md](docs/SYSTEM_DESIGN.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Quick start
 

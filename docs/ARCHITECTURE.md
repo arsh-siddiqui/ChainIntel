@@ -74,25 +74,23 @@ A single asyncio background loop (started in the FastAPI lifespan) cycles every 
 ### 8. Evidence integrity
 Uploads are validated (extension allow-list, size cap), renamed to safe server-generated names, stored under `EVIDENCE_DIR`, and hashed with SHA-256 at rest. The evidence endpoint recomputes and compares hashes on demand (`integrity_verified`). The storage layer is a local directory today; the service interface is the swap point for object storage.
 
-## Frontend structure
+## Frontend & Motion Architecture
 
 ```
-app/                    11 route pages (all "use client", React Query driven)
+app/                    11 workstation route pages ("use client", React Query driven, AnimatePresence route transitions)
 components/
-  layout/               AppShell, Sidebar (active states), Header (global search,
-                        notifications, mode badge)
-  common/               ui primitives, DataTable, Modal, CopyButton, RiskBadge
+  layout/               AppShell (AnimatePresence), Sidebar (layoutId active pill indicator), Header
+  common/               ui primitives (Card, Motion Button, Badge, DataTable, Modal, CopyButton, RiskBadge)
   charts/               Recharts wrappers (area, donut, bar, horizontal bars)
-  graph/                GraphCanvas (React Flow + layered layout + exports)
-  wallet/               overview cards, threat banner, risk panel, tx table,
-                        threat panel, OSINT panel
-lib/                    api client (typed envelope), query client, formatters,
-                        zod validators, constants
-hooks/                  useInvestigation (pipeline stepper), useHealth
+  graph/                GraphCanvas (D3 Force Canvas + layered topology layout + exports)
+  wallet/               overview cards, threat banner, risk panel, tx table, threat panel, OSINT panel
+lib/                    api client (typed envelope), query client, formatters, zod validators, constants
+hooks/                  useInvestigation (pipeline stepper), useHealth, useTheme
 types/                  API-facing TypeScript interfaces
 ```
 
-Loading states are skeletons everywhere; every query has an error state with retry; investigation runs show a 9-step progress stepper.
+- **Framer Motion Engine**: Top-level page transitions via `AnimatePresence`, active route navigation pill with `layoutId` physics spring transitions, and staggered component entry on executive dashboards.
+- **Master Documentation**: For full technical specifications, data flow diagrams, and schema definitions, see [docs/SYSTEM_DESIGN.md](SYSTEM_DESIGN.md).
 
 ## Extension points
 
