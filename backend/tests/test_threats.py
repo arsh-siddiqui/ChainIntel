@@ -96,3 +96,12 @@ def test_import_rejects_bad_format(client):
     response = client.post("/api/threats/import", files=files)
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "IMPORT_FORMAT_ERROR"
+
+
+def test_threat_matching_known_entities(client):
+    """Test known entities threat match resolution."""
+    response = client.get("/api/threats?search=0x12d6621e19a95080e0276664261065623b1a0623")
+    assert response.status_code == 200
+    findings = response.json()["data"]
+    assert any("Tornado" in f["label"] or f["category"] in ("Suspicious Service", "Mixer") for f in findings)
+
