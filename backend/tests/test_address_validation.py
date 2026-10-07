@@ -50,7 +50,7 @@ def test_invalid_bech32_checksum():
 def test_valid_evm_addresses():
     lower = validate_address(VALID_EVM_LOWER)
     checksum = validate_address(VALID_EVM_CHECKSUM)
-    assert lower["valid"] is True and lower["possible_chains"] == ["ethereum", "bsc"]
+    assert lower["valid"] is True and lower["possible_chains"] == ["ethereum", "bsc", "polygon"]
     assert checksum["valid"] is True
 
 

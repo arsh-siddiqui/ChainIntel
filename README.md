@@ -56,7 +56,17 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ## Quick start
 
-### Option A — Docker
+### Option A — One-Click Desktop App (Windows / PowerShell)
+
+Simply double-click `start-app.bat` or run:
+
+```powershell
+.\start-app.ps1
+```
+
+This automatically boots up both the FastAPI backend and Next.js frontend, opening ChainIntel in a standalone application window with full PWA installation support.
+
+### Option B — Docker
 
 ```bash
 docker compose up --build

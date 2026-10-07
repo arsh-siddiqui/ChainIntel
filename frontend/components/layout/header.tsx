@@ -5,8 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Bell, Command, Menu, Moon, Search, ShieldCheck, Sun } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, API_BASE } from "@/lib/api";
 import { truncateMiddle } from "@/lib/formatters";
 import { useTheme } from "@/hooks/use-theme";
 import type { Alert, CaseRecord, NormalizedTx, ThreatFinding, WalletSummary } from "@/types";
@@ -29,7 +30,7 @@ const TITLES: Record<string, string> = {
   "/investigations": "Forensic Investigation Cases",
   "/evidence": "Chain of Custody Evidence",
   "/reports": "Forensic Report Generator",
-  "/settings": "Node & Provider Settings",
+  // "/settings": "Node & Provider Settings",
 };
 
 export function Header({ onOpenMenu }: { onOpenMenu: () => void }) {
@@ -39,6 +40,7 @@ export function Header({ onOpenMenu }: { onOpenMenu: () => void }) {
   const [debounced, setDebounced] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [readAlertIds, setReadAlertIds] = useState<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +60,29 @@ export function Header({ onOpenMenu }: { onOpenMenu: () => void }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Real-time SSE alert listener
+  useEffect(() => {
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource(`${API_BASE}/api/alerts/stream`);
+      es.onmessage = (event) => {
+        try {
+          const alert = JSON.parse(event.data);
+          toast.error(`🚨 ALERT: ${alert.title}`, {
+            description: `${alert.wallet_address.slice(0, 10)}... · ${alert.severity}`,
+          });
+        } catch {
+          /* ignore parse error */
+        }
+      };
+    } catch {
+      /* ignore EventSource connection failure */
+    }
+    return () => {
+      es?.close();
+    };
   }, []);
 
   useEffect(() => {
@@ -82,7 +107,12 @@ export function Header({ onOpenMenu }: { onOpenMenu: () => void }) {
     queryFn: async () => (await api.get<Alert[]>("/alerts?page=1&page_size=5")).data,
     refetchInterval: 60_000,
   });
-  const newAlerts = (alertsData ?? []).filter((a) => a.status === "NEW");
+  const newAlerts = (alertsData ?? []).filter((a) => a.status === "NEW" && !readAlertIds.has(a.id));
+
+  const markAllRead = () => {
+    const ids = new Set((alertsData ?? []).map((a) => a.id));
+    setReadAlertIds(ids);
+  };
 
   const hasResults =
     results && (results.wallets.length + results.transactions.length + results.cases.length + results.threats.length > 0);
@@ -205,14 +235,34 @@ export function Header({ onOpenMenu }: { onOpenMenu: () => void }) {
             <div className="absolute right-0 top-full z-40 mt-2 w-80 rounded-2xl border p-3 shadow-2xl backdrop-blur-2xl border-slate-200 bg-white/95 text-slate-900 dark:border-slate-800 dark:bg-slate-900/95 dark:text-slate-100">
               <div className="flex items-center justify-between border-b pb-2 px-1 border-slate-100 dark:border-slate-800">
                 <p className="text-xs font-bold text-slate-900 dark:text-slate-200">Security Alerts</p>
-                <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                  {newAlerts.length} New
-                </span>
+                <div className="flex items-center gap-2">
+                  {newAlerts.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={markAllRead}
+                      className="text-[10px] font-mono text-sky-600 dark:text-cyan-400 hover:underline"
+                    >
+                      Mark read
+                    </button>
+                  ) : null}
+                  <span className="rounded bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                    {newAlerts.length} New
+                  </span>
+                </div>
               </div>
-              <div className="mt-2 space-y-1">
+              <div className="mt-2 space-y-1 max-h-60 overflow-y-auto thin-scroll">
                 {(alertsData ?? []).length === 0 ? <p className="px-2 py-4 text-xs text-slate-400 dark:text-slate-500 text-center">No alerts triggered.</p> : null}
                 {(alertsData ?? []).map((alert) => (
-                  <Link key={alert.id} href="/alerts" onClick={() => setShowNotifications(false)} className="block rounded-xl p-2 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors">
+                  <Link
+                    key={alert.id}
+                    href="/alerts"
+                    onClick={() => {
+                      setReadAlertIds((prev) => new Set([...prev, alert.id]));
+                      void api.patch(`/alerts/${alert.id}`, { status: "ACKNOWLEDGED" });
+                      setShowNotifications(false);
+                    }}
+                    className="block rounded-xl p-2 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors"
+                  >
                     <p className="truncate text-xs font-semibold text-slate-900 dark:text-slate-200">{alert.title}</p>
                     <p className="truncate text-[11px] font-mono text-slate-500 dark:text-slate-400">
                       {truncateMiddle(alert.wallet_address, 12, 6)} · <span className="text-rose-600 dark:text-rose-400 font-medium">{alert.severity}</span>

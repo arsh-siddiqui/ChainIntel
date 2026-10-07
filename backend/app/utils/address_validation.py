@@ -138,21 +138,31 @@ def validate_address(address: str) -> dict:
             return {"valid": True, "blockchain": "bitcoin", "possible_chains": ["bitcoin"], "reason": f"Valid Base58Check address ({kind})."}
         return {"valid": False, "blockchain": "bitcoin", "possible_chains": ["bitcoin"], "reason": f"Unsupported Bitcoin version byte 0x{version:02x}."}
 
-    # EVM (Ethereum / BSC share the format; ambiguous until the user selects)
+    # EVM (Ethereum / BSC / Polygon share the format; ambiguous until the user selects)
     if address.lower().startswith("0x"):
         valid, reason = validate_evm_address(address)
         return {
             "valid": valid,
             "blockchain": "ethereum" if valid else None,
-            "possible_chains": ["ethereum", "bsc"] if valid else [],
+            "possible_chains": ["ethereum", "bsc", "polygon"] if valid else [],
             "reason": reason,
+        }
+
+    # Solana: Base58 encoded 32-44 character public keys (not starting with 0x, 1, 3, bc1)
+    SOL_BASE58_RE = re.compile(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$")
+    if SOL_BASE58_RE.match(address):
+        return {
+            "valid": True,
+            "blockchain": "solana",
+            "possible_chains": ["solana"],
+            "reason": "Valid Solana Ed25519 Base58 public key.",
         }
 
     return {
         "valid": False,
         "blockchain": None,
         "possible_chains": [],
-        "reason": "Unrecognized address format. Supported: Bitcoin (1/3/bc1), Ethereum, BSC (0x...).",
+        "reason": "Unrecognized address format. Supported: Bitcoin (1/3/bc1), Ethereum, BSC, Polygon (0x...), Solana (Base58).",
     }
 
 

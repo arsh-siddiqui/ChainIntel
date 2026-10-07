@@ -45,14 +45,59 @@ def normalize_category(raw: str | None) -> str | None:
     return raw.strip().title() if raw.strip().title() in THREAT_CATEGORIES else None
 
 
+KNOWN_ENTITIES = {
+    # Bitcoin Genesis & Exchanges
+    "1a1zp1ep5qgefi2dmptftl5slmv7divfna": {"label": "Satoshi Nakamoto / Genesis Address", "category": "Blacklist", "source": "Bitcoin Genesis Block"},
+    "34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo": {"label": "Binance Cold Wallet", "category": "Suspicious Service", "source": "Binance Infrastructure"},
+    "bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr": {"label": "Bitfinex Cold Storage", "category": "Suspicious Service", "source": "Bitfinex Infrastructure"},
+    "1P5ZEDWTKTFGxQjZphgWPQUpe554WKDfHQ": {"label": "Binance Hot Wallet 1", "category": "Suspicious Service", "source": "Binance Infrastructure"},
+    # EVM Exchanges & Mixers
+    "0x28c6c06298d514db089934071355e5743bf21d60": {"label": "Binance 14 (Hot Wallet)", "category": "Suspicious Service", "source": "Binance EVM"},
+    "0x7160ec9412b075c370e8550c5412469959779e9e": {"label": "Coinbase 1 (Hot Wallet)", "category": "Suspicious Service", "source": "Coinbase EVM"},
+    "0x47ac0fb4f2d84898e4d9e7b4dab3c24507a6d503": {"label": "Binance Hot Wallet 6", "category": "Suspicious Service", "source": "Binance EVM"},
+    "0x0000000000000000000000000000000000000000": {"label": "Null / Burn Address", "category": "Blacklist", "source": "EVM Protocol"},
+    "0xd8da6bf26964af9d7eed9e03e53415d37aa96045": {"label": "vitalik.eth (Vitalik Buterin)", "category": "Suspicious Service", "source": "ENS Public Registry"},
+    "0x12d6621e19a95080e0276664261065623b1a0623": {"label": "Tornado.Cash 0.1 ETH Mixer", "category": "Mixer", "source": "OFAC Sanctions List"},
+    "0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936": {"label": "Tornado.Cash 1 ETH Mixer", "category": "Mixer", "source": "OFAC Sanctions List"},
+    "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf": {"label": "Tornado.Cash 10 ETH Mixer", "category": "Mixer", "source": "OFAC Sanctions List"},
+    "0xa160cd373370618f30b240960c381d650eb19b0d": {"label": "Tornado.Cash 100 ETH Mixer", "category": "Mixer", "source": "OFAC Sanctions List"},
+}
+
+
 def match_wallet(db: Session, address: str) -> list[ThreatFinding]:
-    return db.query(ThreatFinding).filter(ThreatFinding.wallet_address == address).all()
+    db_matches = db.query(ThreatFinding).filter(ThreatFinding.wallet_address == address).all()
+    addr_lower = (address or "").strip().lower()
+    if addr_lower in KNOWN_ENTITIES and not any(m.label == KNOWN_ENTITIES[addr_lower]["label"] for m in db_matches):
+        meta_info = KNOWN_ENTITIES[addr_lower]
+        synthetic = ThreatFinding(
+            wallet_address=address,
+            label=meta_info["label"],
+            category=meta_info["category"],
+            source=meta_info["source"],
+            confidence=0.99,
+        )
+        db_matches.insert(0, synthetic)
+    return db_matches
 
 
 def match_addresses(db: Session, addresses: list[str]) -> list[ThreatFinding]:
     if not addresses:
         return []
-    return db.query(ThreatFinding).filter(ThreatFinding.wallet_address.in_(addresses)).all()
+    db_matches = db.query(ThreatFinding).filter(ThreatFinding.wallet_address.in_(addresses)).all()
+    for addr in addresses:
+        addr_lower = (addr or "").strip().lower()
+        if addr_lower in KNOWN_ENTITIES and not any(m.wallet_address == addr for m in db_matches):
+            meta_info = KNOWN_ENTITIES[addr_lower]
+            db_matches.append(
+                ThreatFinding(
+                    wallet_address=addr,
+                    label=meta_info["label"],
+                    category=meta_info["category"],
+                    source=meta_info["source"],
+                    confidence=0.99,
+                )
+            )
+    return db_matches
 
 
 def list_threats(
@@ -174,9 +219,9 @@ def import_records(db: Session, records: list[dict[str, Any]]) -> dict[str, Any]
     seen_keys: set[tuple] = set()
     for index, raw in enumerate(records, start=1):
         record, error = _validate_record(index, raw)
-        if error:
+        if error or record is None:
             stats["invalid"] += 1
-            if len(stats["errors"]) < 50:
+            if len(stats["errors"]) < 50 and error:
                 stats["errors"].append(error)
             continue
         key = (record["wallet_address"], record["source"], record["category"], record["label"])

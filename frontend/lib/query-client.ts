@@ -4,9 +4,12 @@ export function makeQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 30_000,
+        staleTime: 10 * 60 * 1000, // 10 minutes cached data for instant page transitions
+        gcTime: 15 * 60 * 1000,
         retry: 1,
         refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
       },
     },
   });

@@ -33,7 +33,7 @@ const ICONS: Record<string, LucideIcon> = {
   "/investigations": FolderLock,
   "/evidence": FileSearch,
   "/reports": FileText,
-  "/settings": Settings,
+  // "/settings": Settings,
 };
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -50,9 +50,6 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <div>
           <div className="flex items-center gap-1.5">
             <p className="text-[16px] font-black tracking-tight text-slate-900 dark:text-white">ChainIntel</p>
-            <span className="rounded px-1 py-0.2 text-[9px] font-mono font-bold border border-sky-500/30 bg-sky-50 text-sky-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-400">
-              PRO
-            </span>
           </div>
           <p className="text-[10px] font-mono tracking-wider uppercase text-slate-500 dark:text-slate-400">
             Forensic OSINT Engine
@@ -107,11 +104,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="border-t p-4 border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/60">
         <div className="flex items-center gap-3 px-1">
           <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold bg-slate-100 text-sky-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-cyan-400 dark:ring-cyan-500/30 shadow-sm">
-            CI
+            U
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">Lead Investigator</p>
-            <p className="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate">Forensic Clearance L3</p>
+            <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200">User</p>
           </div>
         </div>
       </div>

@@ -25,6 +25,8 @@ def _load_classes() -> None:
     from app.services.blockchain.bsc import BSCProvider
     from app.services.blockchain.ethereum import EvmProvider
     from app.services.blockchain.moralis import MoralisBSCProvider, MoralisEthereumProvider
+    from app.services.blockchain.polygon import PolygonProvider
+    from app.services.blockchain.solana import SolanaProvider
 
     _PROVIDERS.update(
         {
@@ -36,6 +38,8 @@ def _load_classes() -> None:
             "bsc": BSCProvider,
             "bsc-moralis": MoralisBSCProvider,
             "bsc-ankr": AnkrBSCProvider,
+            "polygon": PolygonProvider,
+            "solana": SolanaProvider,
         }
     )
 
@@ -52,6 +56,12 @@ def _configured_chain_providers(chain: str) -> list[str]:
             bool(settings.moralis_api_key),
             bool(settings.ankr_api_key),
         ]
+    elif chain == "polygon":
+        ordered = ["polygon"]
+        configured = [True]  # standard EVM fallback/public
+    elif chain == "solana":
+        ordered = ["solana"]
+        configured = [True]  # keyless mainnet-beta RPC
     elif chain == "bitcoin":
         ordered = ["bitcoin", "blockchain-info"]
         configured = [True, True]  # both public; preference order handles failover

@@ -3,14 +3,20 @@
 import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  if (pathname === "/") {
+    return <div className="min-h-screen w-full bg-slate-950 text-slate-100">{children}</div>;
+  }
+
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <aside className="fixed inset-y-0 left-0 z-40 hidden lg:block">
         <Sidebar />
       </aside>
@@ -18,7 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AnimatePresence>
         {menuOpen ? (
           <div className="fixed inset-0 z-50 lg:hidden">
-            <button type="button" aria-label="Close menu" className="absolute inset-0 bg-ink/30" onClick={() => setMenuOpen(false)} />
+            <button type="button" aria-label="Close menu" className="absolute inset-0 bg-ink/30 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
             <motion.div
               initial={{ x: -280 }}
               animate={{ x: 0 }}
@@ -35,9 +41,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : null}
       </AnimatePresence>
 
-      <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-64 h-full overflow-hidden">
         <Header onOpenMenu={() => setMenuOpen(true)} />
-        <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 lg:px-8">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 max-w-[1600px] w-full mx-auto thin-scroll">
+          {children}
+        </main>
       </div>
     </div>
   );

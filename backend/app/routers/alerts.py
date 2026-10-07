@@ -5,10 +5,13 @@ parameters never shadow the static segment.
 """
 from __future__ import annotations
 
+import asyncio
+import json
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import get_db, SessionLocal
 from app.core.envelope import AppError, ok
 from app.models import MonitoredWallet
 from app.schemas.alert import AlertUpdate, MonitorCreate, MonitorUpdate
@@ -19,6 +22,31 @@ from app.services.serializers import alert_dict, monitor_dict
 from app.utils.address_validation import validate_address
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
+
+
+@router.get("/stream")
+async def stream_alerts():
+    """Server-Sent Events (SSE) endpoint emitting live real-time alerts."""
+
+    async def event_generator():
+        last_id = 0
+        while True:
+            await asyncio.sleep(3)
+            db = SessionLocal()
+            try:
+                items, _ = list_alerts(db, page=1, page_size=5)
+                if items:
+                    newest = items[0]
+                    if newest.get("id", 0) > last_id:
+                        last_id = newest.get("id", 0)
+                        payload = json.dumps(newest)
+                        yield f"data: {payload}\n\n"
+            except Exception:
+                pass
+            finally:
+                db.close()
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.get("")

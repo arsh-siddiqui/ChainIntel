@@ -11,14 +11,16 @@ export const NAV_ITEMS = [
   { href: "/investigations", label: "Investigation Cases" },
   { href: "/evidence", label: "Evidence" },
   { href: "/reports", label: "Reports" },
-  { href: "/settings", label: "Settings" },
+  // { href: "/settings", label: "Settings" },
 ] as const;
 
 export const CHAIN_OPTIONS = [
   { value: "auto", label: "AUTO (detect)" },
-  { value: "bitcoin", label: "Bitcoin" },
-  { value: "ethereum", label: "Ethereum" },
-  { value: "bsc", label: "BNB Smart Chain" },
+  { value: "bitcoin", label: "Bitcoin (BTC)" },
+  { value: "ethereum", label: "Ethereum (ETH)" },
+  { value: "bsc", label: "BNB Smart Chain (BNB)" },
+  { value: "polygon", label: "Polygon (MATIC)" },
+  { value: "solana", label: "Solana (SOL)" },
 ] as const;
 
 export const THREAT_CATEGORIES = [

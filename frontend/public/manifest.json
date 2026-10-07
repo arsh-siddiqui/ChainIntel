@@ -1,0 +1,23 @@
+{
+  "short_name": "ChainIntel",
+  "name": "ChainIntel — Forensic OSINT & Blockchain Intelligence Workstation",
+  "description": "Cryptocurrency wallet investigation, multi-chain transaction graph tracing, threat intelligence, and forensic reporting workstation.",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/dashboard",
+  "background_color": "#020617",
+  "theme_color": "#0284c7",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/"
+}
