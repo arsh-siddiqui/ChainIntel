@@ -101,7 +101,6 @@ export default function LandingPage() {
         >
           <Zap size={13} className="text-sky-600 dark:text-cyan-400 animate-pulse" />
           <span>INSTANT BLOCKCHAIN OSINT & FORENSIC ENGINE</span>
-          <span className="rounded px-2 py-0.2 text-[10px] font-bold bg-sky-200/60 text-sky-800 dark:bg-cyan-400/20 dark:text-cyan-200">NO SIGN UP</span>
         </motion.div>
 
         <motion.h1
@@ -174,7 +173,7 @@ export default function LandingPage() {
         <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-sky-600 dark:text-cyan-400" /> Multi-Chain Live Tracing</span>
           <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-sky-600 dark:text-cyan-400" /> 10,000+ Exchange Labels</span>
-          <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-sky-600 dark:text-cyan-400" /> Zero Sign Up Required</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-sky-600 dark:text-cyan-400" /> Zero-Knowledge Heuristics</span>
           <span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-sky-600 dark:text-cyan-400" /> Automated RPC Failover</span>
         </div>
       </section>
@@ -229,34 +228,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* No Sign Up Banner */}
-      <section className="relative z-10 px-6 py-16 lg:px-16 max-w-7xl mx-auto">
-        <div className="rounded-3xl border p-10 lg:p-16 text-center relative overflow-hidden shadow-lg border-sky-200 bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-50 dark:border-cyan-500/30 dark:bg-gradient-to-r dark:from-sky-950/60 dark:via-slate-900 dark:to-indigo-950/60 backdrop-blur-xl">
-          <div className="relative z-10 max-w-3xl mx-auto">
-            <span className="rounded-full px-4 py-1 text-xs font-mono font-bold bg-sky-100 border border-sky-300 text-sky-800 dark:bg-cyan-400/10 dark:border-cyan-400/20 dark:text-cyan-300">
-              ZERO BARRIERS TO ENTRY
-            </span>
-            <h2 className="mt-4 text-3xl sm:text-5xl font-black text-slate-900 dark:text-white">No Sign Up or Registration Required</h2>
-            <p className="mt-4 text-sm sm:text-base text-slate-600 dark:text-slate-300">
-              Launch your workstation immediately. Access real-time node APIs, trace transaction hashes, and conduct forensic inquiries without user accounts.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/dashboard"
-                className="rounded-xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 dark:from-sky-500 dark:to-cyan-400 px-8 py-3.5 text-sm font-bold text-white dark:text-slate-950 shadow-md shadow-sky-500/20 hover:from-sky-400 hover:to-indigo-500 transition-all active:scale-[0.98]"
-              >
-                Launch Workstation Dashboard
-              </Link>
-              <Link
-                href="/wallet"
-                className="rounded-xl border border-slate-300 bg-white px-8 py-3.5 text-sm font-bold text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80 dark:text-white dark:hover:bg-slate-700 transition-all shadow-sm"
-              >
-                Inspect Target Address
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-slate-200 dark:border-slate-800/80 px-6 py-12 lg:px-16 max-w-7xl mx-auto text-xs text-slate-500 dark:text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono">
