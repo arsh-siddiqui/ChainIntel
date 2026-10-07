@@ -61,8 +61,8 @@ export default function GraphPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Graph Analysis</h2>
-          <p className="text-xs text-slate-500">Interactive transaction graph with bounded-hop fund-flow tracing.</p>
+          <h2 className="font-heading text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Link Analysis & Multi-Hop Attribution Graph</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Interactive transaction graph with bounded-hop fund-flow tracing.</p>
         </div>
         {stats ? (
           <div className="flex items-center gap-2 text-xs text-slate-500">

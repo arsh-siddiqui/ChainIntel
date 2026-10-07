@@ -138,8 +138,8 @@ export default function AlertsPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Alerts & Monitoring</h2>
-          <p className="text-xs text-slate-500">Wallet monitoring rules and generated alerts, evaluated against live blockchain activity.</p>
+          <h2 className="font-heading text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Real-Time Alerts & Threat Monitors</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Wallet monitoring rules and generated alerts, evaluated against live blockchain activity.</p>
         </div>
         <Button onClick={() => setMonitorModal(true)}>
           <Plus size={14} /> Add Monitored Wallet

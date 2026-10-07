@@ -110,8 +110,8 @@ export default function EvidencePage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Evidence</h2>
-          <p className="text-xs text-slate-500">Chain-of-custody repository. Uploaded files are hashed with SHA-256; integrity is re-verified on demand.</p>
+          <h2 className="font-heading text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Chain of Custody Evidence Vault</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Chain-of-custody repository. Uploaded files are hashed with SHA-256; integrity is re-verified on demand.</p>
         </div>
         <Badge className="bg-purple-50 text-purple-700 border-purple-200">
           <FileCheck2 size={12} /> {data?.meta.total ?? "—"} records

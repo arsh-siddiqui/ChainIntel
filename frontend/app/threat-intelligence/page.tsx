@@ -96,8 +96,8 @@ function ThreatsInner() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Threat Intelligence</h2>
-          <p className="text-xs text-slate-500">Configured threat datasets. Every record carries its source and evidence reference.</p>
+          <h2 className="font-heading text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Threat Intelligence Matrix</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Configured threat datasets. Every record carries its source and evidence reference.</p>
         </div>
         <div className="flex items-center gap-2">
           {stats ? (

@@ -69,8 +69,8 @@ function TransactionsInner() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-ink">Transaction Explorer</h2>
-        <p className="text-xs text-slate-500">All normalized transactions in the indexed dataset.</p>
+        <h2 className="font-heading text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Transaction Explorer & Ledger Audit</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">All normalized transactions in the indexed dataset.</p>
       </div>
 
       <Card className="p-4">

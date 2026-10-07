@@ -38,8 +38,8 @@ function ReportsInner() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Reports</h2>
-          <p className="text-xs text-slate-500">Forensic investigation reports with transparent indicators and embedded disclaimers.</p>
+          <h2 className="font-heading text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Forensic Investigation Dossiers & Reports</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Forensic investigation reports with transparent indicators and embedded disclaimers.</p>
         </div>
         <Button onClick={() => setGenerateModal(true)}>
           <Plus size={14} /> Generate Report

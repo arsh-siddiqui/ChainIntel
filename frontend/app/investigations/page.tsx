@@ -71,8 +71,8 @@ function CasesInner() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Investigation Cases</h2>
-          <p className="text-xs text-slate-500">Organize wallets, evidence, findings and reports into casework.</p>
+          <h2 className="font-heading text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Forensic Investigation Casework</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Organize wallets, evidence, findings and reports into casework.</p>
         </div>
         <Button onClick={() => setModal(true)}>
           <Plus size={14} /> Create Case

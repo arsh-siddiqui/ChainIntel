@@ -26,44 +26,87 @@
   body {
     background-color: var(--bg-page);
     color: var(--text-primary);
-    font-feature-settings: "cv02", "cv03", "cv04", "tnum";
+    font-feature-settings: "cv02", "cv03", "cv04", "tnum", "zero";
     min-height: 100vh;
-    letter-spacing: -0.011em;
+    letter-spacing: -0.012em;
     transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: var(--font-jakarta), var(--font-inter), sans-serif;
+    letter-spacing: -0.025em;
+  }
+
+  code, pre, .font-mono-code {
+    font-family: var(--font-jetbrains), ui-monospace, monospace;
+    font-feature-settings: "tnum", "zero";
   }
 
   .dark body {
     background-image: 
-      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.05) 0px, transparent 40%),
-      radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.04) 0px, transparent 40%);
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.06) 0px, transparent 40%),
+      radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.05) 0px, transparent 40%);
   }
 
   body:not(.dark) {
     background-image: 
-      radial-gradient(at 0% 0%, rgba(226, 232, 240, 0.4) 0px, transparent 40%),
-      radial-gradient(at 100% 100%, rgba(241, 245, 249, 0.6) 0px, transparent 40%);
+      radial-gradient(at 0% 0%, rgba(226, 232, 240, 0.5) 0px, transparent 40%),
+      radial-gradient(at 100% 100%, rgba(241, 245, 249, 0.7) 0px, transparent 40%);
   }
+}
+
+/* Typography Gradient Utilities */
+.text-gradient-cyan {
+  @apply bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-500 bg-clip-text text-transparent dark:from-sky-400 dark:via-cyan-300 dark:to-blue-400;
+}
+
+.text-gradient-amber {
+  @apply bg-gradient-to-r from-amber-600 via-orange-600 to-red-500 bg-clip-text text-transparent dark:from-amber-400 dark:via-orange-300 dark:to-rose-400;
 }
 
 /* Forensic Console & Workstation Flat Surfaces (Bloomberg Terminal / Wireshark style) */
 .console-panel {
   background-color: var(--card-bg);
   border: 1px solid var(--card-border);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .glass-panel {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
+  backdrop-filter: blur(12px);
 }
 
 .dark .console-panel,
 .dark .glass-panel {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
 }
 
 body:not(.dark) .console-panel,
 body:not(.dark) .glass-panel {
-  box-shadow: 0 1px 3px 0 rgba(10, 17, 40, 0.03);
+  box-shadow: 0 1px 4px 0 rgba(15, 23, 42, 0.04);
+}
+
+/* Section Header Typography Accent */
+.section-title {
+  font-family: var(--font-jakarta), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  @apply text-slate-900 dark:text-white;
+}
+
+.section-subtitle {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  @apply text-slate-500 dark:text-slate-400;
+}
+
+.badge-tag {
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* Micro-interaction & Keyframe Animations */
