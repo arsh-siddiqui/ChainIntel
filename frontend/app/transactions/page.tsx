@@ -74,9 +74,9 @@ function TransactionsInner() {
       </div>
 
       <Card className="p-4">
-        <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-6">
+        <div className="flex flex-wrap items-center gap-2.5">
           <form
-            className="relative md:col-span-2"
+            className="relative flex-1 min-w-[240px]"
             onSubmit={(event) => {
               event.preventDefault();
               setAppliedSearch(filters.search);
@@ -84,19 +84,22 @@ function TransactionsInner() {
             }}
           >
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} placeholder="Search hash / address…" className="pl-8" aria-label="Search transactions" />
+            <Input value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} placeholder="Search tx hash or wallet address…" className="pl-8 text-xs font-mono" aria-label="Search transactions" />
           </form>
-          <Select value={filters.blockchain} onChange={(e) => { setFilters({ ...filters, blockchain: e.target.value }); setPage(1); }} aria-label="Blockchain filter">
+          <Select value={filters.blockchain} onChange={(e) => { setFilters({ ...filters, blockchain: e.target.value }); setPage(1); }} aria-label="Blockchain filter" className="w-36 font-mono text-xs">
             <option value="">All chains</option>
             <option value="bitcoin">Bitcoin</option>
             <option value="ethereum">Ethereum</option>
             <option value="bsc">BSC</option>
+            <option value="polygon">Polygon</option>
+            <option value="solana">Solana</option>
           </Select>
-          <Input type="number" step="any" value={filters.min_amount} onChange={(e) => setFilters({ ...filters, min_amount: e.target.value })} placeholder="Min amount" aria-label="Minimum amount" />
-          <Input type="number" step="any" value={filters.max_amount} onChange={(e) => setFilters({ ...filters, max_amount: e.target.value })} placeholder="Max amount" aria-label="Maximum amount" />
-          <div className="flex gap-2">
-            <Input type="date" value={filters.start} onChange={(e) => setFilters({ ...filters, start: e.target.value })} aria-label="Start date" />
-            <Input type="date" value={filters.end} onChange={(e) => setFilters({ ...filters, end: e.target.value })} aria-label="End date" />
+          <Input type="number" step="any" value={filters.min_amount} onChange={(e) => setFilters({ ...filters, min_amount: e.target.value })} placeholder="Min amount" aria-label="Minimum amount" className="w-28 font-mono text-xs" />
+          <Input type="number" step="any" value={filters.max_amount} onChange={(e) => setFilters({ ...filters, max_amount: e.target.value })} placeholder="Max amount" aria-label="Maximum amount" className="w-28 font-mono text-xs" />
+          <div className="flex items-center gap-1.5">
+            <Input type="date" value={filters.start} onChange={(e) => setFilters({ ...filters, start: e.target.value })} aria-label="Start date" className="w-36 font-mono text-xs" />
+            <span className="text-xs font-mono font-bold text-slate-400">to</span>
+            <Input type="date" value={filters.end} onChange={(e) => setFilters({ ...filters, end: e.target.value })} aria-label="End date" className="w-36 font-mono text-xs" />
           </div>
         </div>
       </Card>

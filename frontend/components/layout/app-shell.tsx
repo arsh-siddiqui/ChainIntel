@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col lg:pl-64 h-full overflow-hidden">
         <Header onOpenMenu={() => setMenuOpen(true)} />
-        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 max-w-[1600px] w-full mx-auto thin-scroll">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 lg:px-8 max-w-[1600px] w-full mx-auto thin-scroll">
           {children}
         </main>
       </div>
