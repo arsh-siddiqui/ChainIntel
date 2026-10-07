@@ -9,17 +9,17 @@
 └──────────────┬──────────────┘
                │ fetch http://<api>/api/*   (envelope: {success,data,meta,error})
 ┌──────────────▼──────────────┐
-│  FastAPI backend (:8000)    │  CORS · rate limit · request-size limit
+│  FastAPI backend (:8001)    │  CORS · rate limit · request-size limit
 │  ┌───────────────────────┐  │
 │  │ Routers (thin)        │  │  dashboard, wallets, transactions, graph,
 │  │                       │  │  threats, osint, alerts, cases, evidence,
-│  │                       │  │  reports, settings, search, audit-log
+│  │                       │  │  reports, search, audit-log
 │  └──────────┬────────────┘  │
 │  ┌──────────▼────────────┐  │
 │  │ Services (logic)      │  │  wallet_analysis (pipeline)
 │  │                       │  │  blockchain/ (base, bitcoin,
-│  │                       │  │    blockchain-info, ethereum, bsc,
-│  │                       │  │    moralis, ankr, failover, factory)
+│  │                       │  │    blockchain-info, ethereum, bsc, polygon,
+│  │                       │  │    solana, moralis, ankr, failover, factory)
 │  │                       │  │  graph_analysis (NetworkX)
 │  │                       │  │  risk_engine · threat_intelligence
 │  │                       │  │  osint (provider interface)

@@ -6,7 +6,7 @@ Write-Host "ChainIntel dev launcher" -ForegroundColor Cyan
 # 1. Backend
 Push-Location "$PSScriptRoot\..\backend"
 if (-not (Test-Path ".env")) { Copy-Item ".env.example" ".env" }
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PWD'; uvicorn app.main:app --reload --port 8000"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PWD'; uvicorn app.main:app --reload --port 8001"
 Pop-Location
 
 # 2. Frontend
@@ -16,5 +16,5 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PWD'; npm ru
 Pop-Location
 
 Write-Host ""
-Write-Host "Backend:  http://localhost:8000  (docs at /docs)" -ForegroundColor Green
+Write-Host "Backend:  http://localhost:8001  (docs at /docs)" -ForegroundColor Green
 Write-Host "Frontend: http://localhost:3000" -ForegroundColor Green

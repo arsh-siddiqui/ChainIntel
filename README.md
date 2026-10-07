@@ -70,10 +70,10 @@ This automatically boots up both the FastAPI backend and Next.js frontend, openi
 
 ```bash
 docker compose up --build
-# Frontend: http://localhost:3000   API docs: http://localhost:8000/docs
+# Frontend: http://localhost:3000   API docs: http://localhost:8001/docs
 ```
 
-### Option B — Run services separately
+### Option C — Run services separately
 
 **Backend** (Python 3.11+):
 
@@ -81,7 +81,7 @@ docker compose up --build
 cd backend
 pip install -r requirements.txt
 copy .env.example .env        # macOS/Linux: cp .env.example .env
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8001
 ```
 
 **Frontend** (Node 18+):
@@ -89,7 +89,7 @@ uvicorn app.main:app --reload --port 8000
 ```bash
 cd frontend
 npm install
-copy .env.local.example .env.local   # points at http://localhost:8000
+copy .env.local.example .env.local   # points at http://localhost:8001
 npm run dev
 ```
 
@@ -104,6 +104,8 @@ Windows users can also run `scripts/dev.ps1`; macOS/Linux: `bash scripts/dev.sh`
 | Bitcoin | mempool.space (primary), blockchain.info (fallback) | ❌ No — works keylessly |
 | Ethereum | Etherscan v2 → Moralis → Ankr (failover in this order) | ✅ Any ONE of the three keys |
 | BNB Smart Chain | Etherscan v2 → Moralis → Ankr (failover in this order) | ✅ Any ONE of the three keys |
+| Polygon | PolygonScan EVM RPC Provider | ❌ No — works keylessly / standard EVM |
+| Solana | Solana Mainnet-Beta JSON-RPC | ❌ No — works keylessly |
 
 Configured providers are tried in order and fail over automatically on upstream failures. Unconfigured chains return `REQUIRES_CONFIGURATION`; failing providers return `PROVIDER_UNAVAILABLE` — the app never substitutes synthetic data.
 

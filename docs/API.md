@@ -1,6 +1,6 @@
 # ChainIntel — API Reference
 
-Base URL: `http://localhost:8000`
+Base URL: `http://localhost:8001`
 
 Interactive docs: **/docs** (Swagger UI) and **/redoc** (ReDoc).
 
