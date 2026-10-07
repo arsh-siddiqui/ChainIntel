@@ -44,7 +44,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col lg:pl-64 h-full overflow-hidden">
         <Header onOpenMenu={() => setMenuOpen(true)} />
         <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 lg:px-8 max-w-[1600px] w-full mx-auto thin-scroll">
-          {children}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

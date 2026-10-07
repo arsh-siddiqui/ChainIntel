@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { api } from "@/lib/api";
 import { formatCrypto, timeAgo, truncateMiddle } from "@/lib/formatters";
 import { ActivityChart, CategoryDonut, CounterpartyBars, RiskBar } from "@/components/charts/charts";
@@ -33,6 +34,25 @@ import { CopyButton } from "@/components/common/copy-button";
 import { RiskBadge } from "@/components/common/risk-badge";
 import { Badge, Button, Skeleton } from "@/components/common/ui";
 import type { Alert, DashboardSummary, InvestigationSummary } from "@/types";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.06,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: "easeOut" },
+  },
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -75,9 +95,9 @@ export default function DashboardPage() {
   }, [summary?.recent_investigations, investigationFilter]);
 
   return (
-    <div className="space-y-6">
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
       {/* 1. Executive Forensics Header & Rapid Target Dispatcher */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-5 shadow-sm backdrop-blur-xl dark:border-slate-800/90 dark:bg-slate-900/80 dark:shadow-2xl">
+      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white/95 p-5 shadow-sm backdrop-blur-xl dark:border-slate-800/90 dark:bg-slate-900/80 dark:shadow-2xl">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent blur-3xl pointer-events-none" />
 
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -163,7 +183,7 @@ export default function DashboardPage() {
             </span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* 2. Quick Actions Hub */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -783,6 +803,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
