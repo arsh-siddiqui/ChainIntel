@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
+import { PRESEEDED_DASHBOARD_SUMMARY } from "@/lib/preseeded-data";
 import { formatCrypto, timeAgo, truncateMiddle } from "@/lib/formatters";
 import { ActivityChart, CategoryDonut, CounterpartyBars, RiskBar } from "@/components/charts/charts";
 import { CopyButton } from "@/components/common/copy-button";
@@ -77,11 +78,18 @@ export default function DashboardPage() {
     }
   };
 
-  const kpis = summary?.kpis;
-  const recentAlerts = summary?.recent_alerts ?? [];
+  const effectiveSummary = useMemo(() => {
+    if (summary?.kpis && (summary.kpis.total_investigations > 0 || summary.kpis.threat_matches > 0 || summary.kpis.open_cases > 0)) {
+      return summary;
+    }
+    return PRESEEDED_DASHBOARD_SUMMARY;
+  }, [summary]);
+
+  const kpis = effectiveSummary.kpis;
+  const recentAlerts = effectiveSummary.recent_alerts ?? [];
 
   const filteredInvestigations = useMemo(() => {
-    const list = summary?.recent_investigations ?? [];
+    const list = effectiveSummary.recent_investigations ?? [];
     if (investigationFilter === "HIGH_RISK") {
       return list.filter((i) => i.risk_level === "HIGH" || i.risk_level === "ELEVATED");
     }
@@ -92,7 +100,7 @@ export default function DashboardPage() {
       return list.filter((i) => i.status === "RESOLVED" || i.status === "CLOSED");
     }
     return list;
-  }, [summary?.recent_investigations, investigationFilter]);
+  }, [effectiveSummary.recent_investigations, investigationFilter]);
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
@@ -483,7 +491,7 @@ export default function DashboardPage() {
               BTC FLOW
             </span>
           </div>
-          {isLoading ? <Skeleton className="h-64 w-full" /> : <ActivityChart data={summary?.activity ?? []} />}
+          {isLoading ? <Skeleton className="h-64 w-full" /> : <ActivityChart data={effectiveSummary.activity} />}
         </div>
 
         {/* Chart 2: Threat Category Distribution */}
@@ -504,7 +512,7 @@ export default function DashboardPage() {
               CATEGORIES
             </span>
           </div>
-          {isLoading ? <Skeleton className="h-64 w-full" /> : <CategoryDonut data={summary?.threat_distribution ?? []} />}
+          {isLoading ? <Skeleton className="h-64 w-full" /> : <CategoryDonut data={effectiveSummary.threat_distribution} />}
         </div>
 
         {/* Chart 3: Top Suspicious Counterparties */}
@@ -525,7 +533,7 @@ export default function DashboardPage() {
               TRANSACTIONS
             </span>
           </div>
-          {isLoading ? <Skeleton className="h-64 w-full" /> : <CounterpartyBars data={summary?.top_counterparties ?? []} />}
+          {isLoading ? <Skeleton className="h-64 w-full" /> : <CounterpartyBars data={effectiveSummary.top_counterparties} />}
         </div>
 
         {/* Chart 4: Risk Rating Distribution */}
@@ -546,7 +554,7 @@ export default function DashboardPage() {
               SEVERITY
             </span>
           </div>
-          {isLoading ? <Skeleton className="h-64 w-full" /> : <RiskBar data={summary?.risk_distribution ?? []} />}
+          {isLoading ? <Skeleton className="h-64 w-full" /> : <RiskBar data={effectiveSummary.risk_distribution} />}
         </div>
       </div>
 

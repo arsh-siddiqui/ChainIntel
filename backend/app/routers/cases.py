@@ -22,6 +22,9 @@ def list_cases(
     page: int = 1,
     page_size: int = 20,
 ):
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
+
     items, pagination = case_service.list_cases(db, status=status, search=search, page=page, page_size=page_size)
     return ok(items, pagination)
 

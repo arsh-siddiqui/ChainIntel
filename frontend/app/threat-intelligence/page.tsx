@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExternalLink, Upload } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
+import { PRESEEDED_THREATS, PRESEEDED_THREAT_STATS } from "@/lib/preseeded-data";
 import { Button, Card, CardHeader, Input, Select, Spinner, Badge, Skeleton } from "@/components/common/ui";
 import { DataTable, type Column } from "@/components/common/data-table";
 import { THREAT_CATEGORIES } from "@/lib/constants";
@@ -100,10 +101,10 @@ function ThreatsInner() {
           <p className="text-xs text-slate-500 dark:text-slate-400">Configured threat datasets. Every record carries its source and evidence reference.</p>
         </div>
         <div className="flex items-center gap-2">
-          {stats ? (
+          {((stats && stats.total > 0) ? stats : PRESEEDED_THREAT_STATS) ? (
             <>
-              <Badge className="bg-purple-50 text-purple-700 border-purple-200">{stats.total} records</Badge>
-              <Badge className="bg-red-50 text-red-700 border-red-200">{stats.flagged_wallets} flagged wallets</Badge>
+              <Badge className="bg-purple-50 text-purple-700 border-purple-200">{((stats && stats.total > 0) ? stats : PRESEEDED_THREAT_STATS).total} records</Badge>
+              <Badge className="bg-red-50 text-red-700 border-red-200">{((stats && stats.total > 0) ? stats : PRESEEDED_THREAT_STATS).flagged_wallets} flagged wallets</Badge>
             </>
           ) : (
             <Skeleton className="h-5 w-40" />
@@ -112,7 +113,7 @@ function ThreatsInner() {
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {(stats?.categories ?? []).slice(0, 8).map((entry) => (
+        {(((stats && stats.total > 0) ? stats : PRESEEDED_THREAT_STATS)?.categories ?? []).slice(0, 8).map((entry) => (
           <Card key={entry.category} className="flex items-center justify-between px-4 py-3">
             <Badge className={CATEGORY_BADGE[entry.category] ?? CATEGORY_BADGE.Unknown}>{entry.category}</Badge>
             <span className="text-lg font-semibold text-ink">{entry.count}</span>
@@ -169,9 +170,9 @@ function ThreatsInner() {
         ) : (
           <DataTable
             columns={columns}
-            rows={data?.rows ?? []}
-            rowKey={(t, ) => `${t.wallet_address}-${t.source}-${t.label}`}
-            meta={data?.meta}
+            rows={(data?.rows && data.rows.length > 0) ? data.rows : PRESEEDED_THREATS}
+            rowKey={(t) => `${t.wallet_address}-${t.source}-${t.label}`}
+            meta={data?.meta ?? { page: 1, page_size: 20, total: PRESEEDED_THREATS.length, total_pages: 1 }}
             onPageChange={setPage}
             emptyMessage="No threat records match the filters."
           />
@@ -181,7 +182,7 @@ function ThreatsInner() {
       <Card>
         <CardHeader title="Sources" subtitle="Configured threat dataset sources" />
         <div className="flex flex-wrap gap-2 p-4">
-          {(stats?.sources ?? []).map((source) => (
+          {(((stats && stats.total > 0) ? stats : PRESEEDED_THREAT_STATS)?.sources ?? []).map((source) => (
             <Badge key={source.source} className="bg-slate-100 text-slate-600 border-slate-200">
               {source.source} · {source.count}
             </Badge>

@@ -63,11 +63,40 @@ def check_db_connection() -> dict[str, str]:
         return {"status": "failed", "dialect": dialect_name, "url": sanitized_url, "error": str(exc)}
 
 
-def init_db(seed: bool = False) -> None:
+def ensure_seeded(db: Session | None = None) -> None:
+    """Ensure baseline pre-seeded data exists in the database.
+    
+    If the database is empty (no cases or threat findings), automatically triggers
+    idempotent seeding. Concurrency-safe and idempotent with ON CONFLICT DO NOTHING.
+    """
+    from app.models import Case, ThreatFinding
+    from app.core.seed import seed_db
+
+    close_after = False
+    if db is None:
+        db = SessionLocal()
+        close_after = True
+
+    try:
+        # Check if database has baseline data
+        case_count = db.query(Case).count()
+        threat_count = db.query(ThreatFinding).count()
+        if case_count == 0 or threat_count == 0:
+            logger.info("Database appears unseeded (cases=%d, threats=%d). Executing automatic baseline seed...", case_count, threat_count)
+            seed_db(db)
+    except Exception as exc:
+        db.rollback()
+        logger.warning("ensure_seeded skipped or encountered error: %s", exc)
+    finally:
+        if close_after:
+            db.close()
+
+
+def init_db(seed: bool = True) -> None:
     """Initialize database directory, verify connection, and ensure tables exist.
     
-    Seeding is only performed when explicitly requested (e.g. from the one-time
-    initialization command), never in Gunicorn workers on startup.
+    Automatically runs idempotent baseline seeding when seed=True (or when tables are empty).
+    Safe for multi-worker environments thanks to ON CONFLICT DO NOTHING.
     """
     from app import models  # noqa: F401 - register all models on the metadata
 
@@ -76,10 +105,4 @@ def init_db(seed: bool = False) -> None:
     Base.metadata.create_all(bind=engine)
 
     if seed:
-        from app.core.seed import seed_db
-
-        db = SessionLocal()
-        try:
-            seed_db(db)
-        finally:
-            db.close()
+        ensure_seeded()

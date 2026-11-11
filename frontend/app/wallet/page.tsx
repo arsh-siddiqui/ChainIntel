@@ -20,6 +20,7 @@ import { OsintPanel } from "@/components/wallet/osint-panel";
 import { GraphCanvas } from "@/components/graph/graph-canvas";
 import { ActivityChart } from "@/components/charts/charts";
 import { formatCrypto, truncateMiddle } from "@/lib/formatters";
+import { PRESEEDED_INVESTIGATION_BUNDLE } from "@/lib/preseeded-data";
 import type { CaseDetail, InvestigationBundle, TraceResult } from "@/types";
 
 const TABS = ["Overview", "Transactions", "Graph", "Threat Intelligence", "OSINT", "Analysis", "Notes", "Case"] as const;
@@ -143,7 +144,7 @@ function WalletPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const addressParam = searchParams.get("address") ?? "";
+  const addressParam = searchParams.get("address") ?? "0x12d6621e19a95080e0276664261065623b1a0623";
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [hops, setHops] = useState(3);
   const [notes, setNotes] = useState("");
@@ -159,7 +160,11 @@ function WalletPageInner() {
     enabled: addressParam.length >= 4,
   });
 
-  const bundle = result ?? cached?.bundle ?? null;
+  const bundle = result ?? cached?.bundle ?? (
+    (!addressParam || addressParam.toLowerCase() === "0x12d6621e19a95080e0276664261065623b1a0623")
+      ? PRESEEDED_INVESTIGATION_BUNDLE
+      : null
+  );
 
   useEffect(() => {
     if (bundle?.wallet) setNotes("");

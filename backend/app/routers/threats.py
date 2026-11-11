@@ -23,6 +23,9 @@ def list_threats(
     page: int = 1,
     page_size: int = 25,
 ):
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
+
     items, pagination = threat_intelligence.list_threats(db, search=search, category=category, source=source, page=page, page_size=page_size)
     return ok([threat_dict(t) for t in items], pagination)
 
@@ -30,6 +33,8 @@ def list_threats(
 @router.get("/stats")
 def threat_stats(db: Session = Depends(get_db)):
     from sqlalchemy import func
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
 
     from app.models import ThreatFinding
 

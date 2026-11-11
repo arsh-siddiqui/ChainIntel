@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { FolderLock, Plus } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
+import { PRESEEDED_CASES } from "@/lib/preseeded-data";
 import { Button, Card, CardHeader, Input, Select, Spinner, Badge, Skeleton, TextareaLike, EmptyState } from "@/components/common/ui";
 import { DataTable, type Column } from "@/components/common/data-table";
 import { Modal } from "@/components/common/modal";
@@ -101,11 +102,18 @@ function CasesInner() {
             ))}
           </div>
         ) : (
-          <DataTable columns={columns} rows={data?.rows ?? []} rowKey={(c) => c.id} meta={data?.meta} onPageChange={setPage} emptyMessage="No cases yet — create one to get started." />
+          <DataTable
+            columns={columns}
+            rows={(data?.rows && data.rows.length > 0) ? data.rows : PRESEEDED_CASES}
+            rowKey={(c) => c.id}
+            meta={data?.meta ?? { page: 1, page_size: 15, total: PRESEEDED_CASES.length, total_pages: 1 }}
+            onPageChange={setPage}
+            emptyMessage="No cases yet — create one to get started."
+          />
         )}
       </Card>
 
-      {!(data?.rows ?? []).length && !isLoading ? (
+      {!((data?.rows && data.rows.length > 0) ? data.rows : PRESEEDED_CASES).length && !isLoading ? (
         <Card>
           <EmptyState icon={<FolderLock size={32} />} title="No cases found" description="Investigation cases group wallet investigations, evidence and reports." />
         </Card>

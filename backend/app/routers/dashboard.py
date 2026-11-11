@@ -19,6 +19,9 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 @router.get("/summary")
 def dashboard_summary(db: Session = Depends(get_db)):
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
+
     total_investigations = db.query(Investigation).count()
     suspicious_wallets = db.query(func.count(func.distinct(ThreatFinding.wallet_address))).scalar() or 0
     transactions_analyzed = db.query(Transaction).count()

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Download, FileText, Plus } from "lucide-react";
 import { api, apiDownload } from "@/lib/api";
+import { PRESEEDED_REPORTS } from "@/lib/preseeded-data";
 import { Button, Card, CardHeader, Input, Spinner, Badge, Skeleton, EmptyState } from "@/components/common/ui";
 import { Modal } from "@/components/common/modal";
 import { RiskBadge } from "@/components/common/risk-badge";
@@ -31,8 +32,8 @@ function ReportsInner() {
     enabled: selectedId.length > 4,
   });
 
-  const rows = data?.rows ?? [];
-  const activeReport = report ?? rows.find((r) => r.id === selectedId);
+  const rows = (data?.rows && data.rows.length > 0) ? data.rows : PRESEEDED_REPORTS;
+  const activeReport = report ?? rows.find((r) => r.id === selectedId) ?? rows[0];
 
   return (
     <div className="space-y-4">

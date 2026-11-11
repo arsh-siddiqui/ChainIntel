@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import ensure_seeded, get_db
 from app.core.envelope import ok
 from app.schemas.graph import TraceRequest
 from app.services.graph_analysis import trace_funds
@@ -14,6 +14,7 @@ router = APIRouter(prefix="/graph", tags=["graph"])
 
 @router.post("/trace")
 def trace(request: TraceRequest, db: Session = Depends(get_db)):
+    ensure_seeded(db)
     result = trace_funds(
         db,
         source=request.wallet_address,

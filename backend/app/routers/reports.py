@@ -16,6 +16,9 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("")
 def list_reports(db: Session = Depends(get_db), page: int = 1, page_size: int = 20):
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
+
     items, pagination = report_service.list_reports(db, page=page, page_size=page_size)
     return ok(items, pagination)
 

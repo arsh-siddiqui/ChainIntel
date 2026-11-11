@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import ensure_seeded, get_db
 from app.core.envelope import ok
 from app.services import osint as osint_service
 from app.services.blockchain.factory import provider_status_summary
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 
 @router.get("/providers")
 def providers(db: Session = Depends(get_db)):
+    ensure_seeded(db)
     return ok(
         {
             "mode": settings.app_mode.upper(),
@@ -31,6 +32,7 @@ def providers(db: Session = Depends(get_db)):
 
 @router.get("/overview")
 def overview(db: Session = Depends(get_db)):
+    ensure_seeded(db)
     from app.models import Alert, MonitoredWallet
 
     db_scheme = settings.effective_database_url.split(":", 1)[0] if settings.effective_database_url else "sqlite"

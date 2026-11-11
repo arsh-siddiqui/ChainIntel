@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import ensure_seeded, get_db
 from app.core.envelope import ok
 from app.schemas.osint import RestrictedSourceCreate
 from app.services import osint as osint_service
@@ -27,6 +27,7 @@ def osint_sources():
 
 @router.get("/search/{address}")
 def search_address(address: str, db: Session = Depends(get_db)):
+    ensure_seeded(db)
     validation = validate_address(address)
     correlation = osint_service.correlate_wallet(address)
     return ok(
@@ -40,6 +41,7 @@ def search_address(address: str, db: Session = Depends(get_db)):
 
 @router.get("/restricted/{address}")
 def restricted_records(address: str, db: Session = Depends(get_db)):
+    ensure_seeded(db)
     rows = osint_service.restricted_findings(db, address)
     return ok(
         {

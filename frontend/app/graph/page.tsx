@@ -10,6 +10,7 @@ import { Button, Card, CardHeader, Input, Select, Spinner, Badge, Skeleton, Empt
 import { GraphCanvas } from "@/components/graph/graph-canvas";
 import { GRAPH_NODE_COLORS } from "@/lib/constants";
 import { formatCrypto, truncateMiddle } from "@/lib/formatters";
+import { PRESEEDED_INVESTIGATION_BUNDLE } from "@/lib/preseeded-data";
 import type { GraphData, TraceResult } from "@/types";
 
 const NODE_TYPES = ["victim", "wallet", "ransomware", "scam", "exchange", "mixer", "intermediate", "aggregator", "unknown"] as const;
@@ -65,7 +66,11 @@ function GraphInner() {
     });
   };
 
-  const stats = graph?.stats;
+  const effectiveGraph = (graph && graph.nodes && graph.nodes.length > 0)
+    ? graph
+    : (appliedSource.toLowerCase() === "0x12d6621e19a95080e0276664261065623b1a0623" ? PRESEEDED_INVESTIGATION_BUNDLE.graph : graph);
+
+  const stats = effectiveGraph?.stats;
 
   return (
     <div className="space-y-4">
@@ -209,19 +214,19 @@ function GraphInner() {
             <Card>
               <EmptyState title="Graph unavailable" description={(error as Error).message} action={<Button size="sm" variant="secondary" onClick={() => void refetch()}>Retry</Button>} />
             </Card>
-          ) : isLoading || !graph ? (
+          ) : isLoading && !effectiveGraph ? (
             <Card className="flex h-[620px] items-center justify-center p-6">
               <div className="flex items-center gap-2 text-sm text-slate-500">
                 <Spinner /> Building transaction graph…
               </div>
             </Card>
-          ) : graph.nodes.length === 0 ? (
+          ) : !effectiveGraph || effectiveGraph.nodes.length === 0 ? (
             <Card>
               <EmptyState title="No graph data" description="No indexed transactions found for this wallet." />
             </Card>
           ) : (
             <GraphCanvas
-              graph={graph}
+              graph={effectiveGraph}
               trace={trace}
               showAmounts={showAmounts}
               showLabels={showLabels}
@@ -357,7 +362,7 @@ function GraphInner() {
                     ["Unique wallets", String(stats.unique_wallets)],
                     ["Transaction edges", String(stats.edge_count)],
                     ["Total observed amount", formatCrypto(stats.total_amount, "BTC")],
-                    ["Focus", truncateMiddle(graph.focus_address, 12, 6)],
+                    ["Focus", truncateMiddle(effectiveGraph?.focus_address ?? appliedSource, 12, 6)],
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-center justify-between border-b border-slate-100 pb-1.5">
                       <dt className="text-xs text-slate-500">{label}</dt>

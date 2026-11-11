@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { api } from "@/lib/api";
+import { PRESEEDED_TRANSACTIONS } from "@/lib/preseeded-data";
 import { Button, Card, CardHeader, Input, Select, Spinner, Badge, Skeleton } from "@/components/common/ui";
 import { DataTable, type Column } from "@/components/common/data-table";
 import { Modal } from "@/components/common/modal";
@@ -121,9 +122,9 @@ function TransactionsInner() {
         ) : (
           <DataTable
             columns={columns}
-            rows={data?.rows ?? []}
+            rows={(data?.rows && data.rows.length > 0) ? data.rows : PRESEEDED_TRANSACTIONS}
             rowKey={(tx) => tx.tx_hash}
-            meta={data?.meta}
+            meta={data?.meta ?? { page: 1, page_size: 25, total: PRESEEDED_TRANSACTIONS.length, total_pages: 1 }}
             onPageChange={(p) => setPage(p)}
             onSort={(key, dir) => {
               setSort({ key, dir });

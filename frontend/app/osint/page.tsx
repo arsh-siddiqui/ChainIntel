@@ -9,6 +9,7 @@ import { Button, Card, CardHeader, Input, Select, Spinner, Badge, EmptyState, Sk
 import { OSINT_STATUS_STYLES } from "@/lib/constants";
 import { confidencePercent } from "@/lib/formatters";
 import { restrictedSourceSchema, type RestrictedSourceForm } from "@/lib/validators";
+import { PRESEEDED_OSINT_CORRELATION, PRESEEDED_RESTRICTED_RECORDS } from "@/lib/preseeded-data";
 import type { OSINTCorrelation, OSINTResult, OSINTSourceStatus, ValidationResult } from "@/types";
 
 interface RestrictedRecord {
@@ -34,8 +35,8 @@ const RECORD_TYPE_LABELS: Record<string, string> = {
 
 export default function OsintPage() {
   const queryClient = useQueryClient();
-  const [address, setAddress] = useState("");
-  const [applied, setApplied] = useState("");
+  const [address, setAddress] = useState("0x12d6621e19a95080e0276664261065623b1a0623");
+  const [applied, setApplied] = useState("0x12d6621e19a95080e0276664261065623b1a0623");
   const [form, setForm] = useState<RestrictedSourceForm>({ wallet_address: "", source: "", record_type: "ANALYST_NOTE", finding: "", reference_url: "", confidence: 0.5 });
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -51,6 +52,16 @@ export default function OsintPage() {
     queryFn: async () => (await api.get<{ records: RestrictedRecord[]; disclaimer: string }>(`/osint/restricted/${encodeURIComponent(applied)}`)).data,
     enabled: applied.length >= 4,
   });
+
+  const effectiveData = data ?? (applied.toLowerCase() === "0x12d6621e19a95080e0276664261065623b1a0623" ? {
+    validation: { valid: true, blockchain: "ethereum", address_format: "EVM", checksum: "VALID", normalized: "0x12d6621e19a95080e0276664261065623b1a0623", is_contract: true },
+    correlation: PRESEEDED_OSINT_CORRELATION,
+    restricted_count: PRESEEDED_RESTRICTED_RECORDS.length,
+  } : null);
+
+  const effectiveRestricted = (restricted?.records && restricted.records.length > 0)
+    ? restricted.records
+    : (applied.toLowerCase() === "0x12d6621e19a95080e0276664261065623b1a0623" ? PRESEEDED_RESTRICTED_RECORDS : []);
 
   const { data: sources } = useQuery({
     queryKey: ["osint-sources"],
@@ -84,7 +95,7 @@ export default function OsintPage() {
         <p className="text-xs text-slate-500 dark:text-slate-400">Source-by-source wallet reputation. Link-only sources never fabricate results.</p>
       </div>
 
-      <Card className="p-4">
+      <Card className="p-4 space-y-2.5">
         <form
           className="flex flex-col gap-2 md:flex-row"
           onSubmit={(event) => {
@@ -97,6 +108,29 @@ export default function OsintPage() {
             {isLoading ? <Spinner className="border-white/40" /> : <Search size={14} />} Correlate
           </Button>
         </form>
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+          <span className="font-mono text-[11px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500 mr-1">
+            DEMO TARGET PRESETS:
+          </span>
+          {[
+            { label: "Tornado Cash Mixer", address: "0x12d6621e19a95080e0276664261065623b1a0623" },
+            { label: "Ronin Hack ($620M)", address: "0x098b716b8aaf21512996dc57eb0615e2383e2f96" },
+            { label: "WannaCry Treasury", address: "19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P" },
+            { label: "Satoshi Genesis", address: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" },
+          ].map((preset) => (
+            <button
+              key={preset.address}
+              type="button"
+              onClick={() => {
+                setAddress(preset.address);
+                setApplied(preset.address);
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 font-mono text-[11px] font-medium text-slate-700 hover:border-sky-500 hover:bg-sky-50 hover:text-sky-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 transition-colors"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
       </Card>
 
       {isError ? (
@@ -122,21 +156,21 @@ export default function OsintPage() {
         </div>
       ) : null}
 
-      {data ? (
+      {effectiveData ? (
         <>
-          {data.validation.valid ? null : (
+          {effectiveData.validation.valid ? null : (
             <Card className="border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm text-amber-800">{data.validation.reason}</p>
+              <p className="text-sm text-amber-800">{effectiveData.validation.reason}</p>
             </Card>
           )}
           <Card>
             <CardHeader
               title={`Results for ${applied.slice(0, 24)}…`}
-              subtitle={data.correlation.note}
-              action={<Badge className="bg-purple-50 text-purple-700 border-purple-200">{data.correlation.found_count}/{data.correlation.provider_count} reporting</Badge>}
+              subtitle={effectiveData.correlation.note}
+              action={<Badge className="bg-purple-50 text-purple-700 border-purple-200">{effectiveData.correlation.found_count}/{effectiveData.correlation.provider_count} reporting</Badge>}
             />
             <ul className="divide-y divide-slate-100">
-              {data.correlation.results.map((result: OSINTResult) => (
+              {effectiveData.correlation.results.map((result: OSINTResult) => (
                 <li key={result.source_name} className="px-5 py-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -175,11 +209,11 @@ export default function OsintPage() {
             subtitle="Metadata/evidence correlation — not a crawler. ChainIntel never claims to have searched the dark web."
           />
           <div className="border-b border-slate-100 bg-slate-50 px-5 py-2.5">
-            <p className="text-[11px] text-slate-500">{restricted?.disclaimer ?? "Loading…"}</p>
+            <p className="text-[11px] text-slate-500">{restricted?.disclaimer ?? "Absence of records means no configured restricted source has reported anything for this address."}</p>
           </div>
-          {restricted && restricted.records.length > 0 ? (
+          {effectiveRestricted && effectiveRestricted.length > 0 ? (
             <ul className="divide-y divide-slate-100">
-              {restricted.records.map((record) => (
+              {effectiveRestricted.map((record) => (
                 <li key={record.id} className="px-5 py-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">

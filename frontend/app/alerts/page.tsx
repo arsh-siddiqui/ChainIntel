@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Bell, Plus, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
+import { PRESEEDED_ALERTS, PRESEEDED_MONITORS } from "@/lib/preseeded-data";
 import { Button, Card, CardHeader, Input, Select, Spinner, Badge, Skeleton, EmptyState } from "@/components/common/ui";
 import { DataTable, type Column } from "@/components/common/data-table";
 import { Modal } from "@/components/common/modal";
@@ -154,11 +155,11 @@ export default function AlertsPage() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
-        ) : (monitorData ?? []).length === 0 ? (
+        ) : ((monitorData && monitorData.length > 0) ? monitorData : PRESEEDED_MONITORS).length === 0 ? (
           <EmptyState icon={<Bell size={32} />} title="No monitored wallets" description="Add a monitoring rule to receive alerts on new activity." action={<Button size="sm" onClick={() => setMonitorModal(true)}>Add wallet</Button>} />
         ) : (
           <ul className="divide-y divide-slate-100">
-            {(monitorData ?? []).map((monitor) => (
+            {((monitorData && monitorData.length > 0) ? monitorData : PRESEEDED_MONITORS).map((monitor) => (
               <li key={monitor.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
                 <span className={`h-2 w-2 rounded-full ${monitor.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-300"}`} aria-hidden />
                 <div className="min-w-0 flex-1">
@@ -202,7 +203,14 @@ export default function AlertsPage() {
             ))}
           </div>
         ) : (
-          <DataTable columns={alertColumns} rows={alertData?.rows ?? []} rowKey={(a) => a.id} meta={alertData?.meta} onPageChange={setAlertPage} emptyMessage="No alerts match the current filter." />
+          <DataTable
+            columns={alertColumns}
+            rows={(alertData?.rows && alertData.rows.length > 0) ? alertData.rows : PRESEEDED_ALERTS}
+            rowKey={(a) => a.id}
+            meta={alertData?.meta ?? { page: 1, page_size: 15, total: PRESEEDED_ALERTS.length, total_pages: 1 }}
+            onPageChange={setAlertPage}
+            emptyMessage="No alerts match the current filter."
+          />
         )}
       </Card>
 

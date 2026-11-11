@@ -7,13 +7,14 @@ from __future__ import annotations
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
-from app.core.database import init_db
+from app.core.database import get_db, init_db
 from app.core.envelope import (
     AppError,
     app_error_handler,
@@ -48,10 +49,19 @@ _monitor_task: asyncio.Task | None = None
 _stop_event: asyncio.Event | None = None
 
 
+_db_initialized = False
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure database tables exist without triggering database seeding in workers
-    init_db(seed=False)
+    global _db_initialized
+    if not _db_initialized:
+        _db_initialized = True
+        # Ensure database tables exist and baseline pre-seeded data is populated
+        try:
+            init_db(seed=True)
+        except Exception as exc:
+            logger.warning("Lifespan database init/seed: %s", exc)
 
     global _monitoring_started, _monitor_task, _stop_event
     if settings.monitoring_enabled and not _monitoring_started:
@@ -143,3 +153,25 @@ def health():
 @app.get("/api")
 def api_root():
     return ok({"name": settings.app_name, "docs": "/docs", "health": "/api/health"})
+
+
+@app.api_route("/api/seed", methods=["GET", "POST"])
+def api_trigger_seed(db: Session = Depends(get_db)):
+    """Idempotently seed or re-verify database pre-seeded forensic data on demand."""
+    from app.core.seed import seed_db
+    from app import models
+
+    try:
+        seed_db(db)
+        return ok({
+            "message": "Database pre-seeded forensic dataset verified and loaded.",
+            "wallets": db.query(models.Wallet).count(),
+            "transactions": db.query(models.Transaction).count(),
+            "threats": db.query(models.ThreatFinding).count(),
+            "cases": db.query(models.Case).count(),
+            "alerts": db.query(models.Alert).count(),
+            "reports": db.query(models.Report).count(),
+        })
+    except Exception as exc:
+        db.rollback()
+        raise AppError(500, "SEED_ERROR", f"Failed to seed database: {exc}")

@@ -23,6 +23,9 @@ def list_evidence(
     page: int = 1,
     page_size: int = 25,
 ):
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
+
     items, pagination = evidence_service.list_evidence(db, case_id=case_id, evidence_type=type, search=search, page=page, page_size=page_size)
     return ok(items, {**pagination, "evidence_types": EVIDENCE_TYPES})
 

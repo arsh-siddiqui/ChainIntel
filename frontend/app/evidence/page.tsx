@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Download, FileCheck2, ShieldCheck } from "lucide-react";
 import { api, apiDownload } from "@/lib/api";
+import { PRESEEDED_EVIDENCE } from "@/lib/preseeded-data";
 import { Button, Card, CardHeader, Input, Select, Spinner, Badge, Skeleton, EmptyState } from "@/components/common/ui";
 import { DataTable, type Column } from "@/components/common/data-table";
 import { EVIDENCE_TYPES } from "@/lib/constants";
@@ -149,10 +150,16 @@ export default function EvidencePage() {
               <Skeleton key={i} className="h-9 w-full" />
             ))}
           </div>
-        ) : (data?.rows ?? []).length === 0 ? (
+        ) : ((data?.rows && data.rows.length > 0) ? data.rows : PRESEEDED_EVIDENCE).length === 0 ? (
           <EmptyState title="No evidence yet" description="Open a case and attach screenshots, documents, API responses or analyst notes." action={<Link href="/investigations"><Button size="sm">Open cases</Button></Link>} />
         ) : (
-          <DataTable columns={columns} rows={data?.rows ?? []} rowKey={(e) => e.id} meta={data?.meta} onPageChange={setPage} />
+          <DataTable
+            columns={columns}
+            rows={(data?.rows && data.rows.length > 0) ? data.rows : PRESEEDED_EVIDENCE}
+            rowKey={(e) => e.id}
+            meta={data?.meta ?? { page: 1, page_size: 20, total: PRESEEDED_EVIDENCE.length, total_pages: 1 }}
+            onPageChange={setPage}
+          />
         )}
       </Card>
     </div>

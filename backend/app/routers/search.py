@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import ensure_seeded, get_db
 from app.core.envelope import ok
 from app.models import Case, ThreatFinding, Transaction, Wallet
 from app.services.serializers import case_dict, threat_dict, tx_dict, wallet_dict
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 @router.get("")
 def global_search(db: Session = Depends(get_db), q: str = Query(min_length=2, max_length=255)):
+    ensure_seeded(db)
     like = f"%{q}%"
     limit = 5
 

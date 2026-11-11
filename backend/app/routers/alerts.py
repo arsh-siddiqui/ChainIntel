@@ -58,12 +58,18 @@ def get_alerts(
     page: int = 1,
     page_size: int = 25,
 ):
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
+
     items, pagination = list_alerts(db, status=status, severity=severity, search=search, page=page, page_size=page_size)
     return ok(items, pagination)
 
 
 @router.get("/monitors")
 def get_monitors(db: Session = Depends(get_db)):
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
+
     monitors = monitoring.list_monitors(db)
     return ok([monitor_dict(m) for m in monitors], {"count": len(monitors)})
 

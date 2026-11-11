@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import ensure_seeded, get_db
 from app.core.envelope import AppError, ok
 from app.models import Investigation, OSINTFinding, Transaction, Wallet
 from app.schemas.wallet import InvestigateRequest, WalletNotesUpdate
@@ -36,12 +36,14 @@ def pipeline_steps():
 
 @router.post("/investigate")
 async def investigate(request: InvestigateRequest, db: Session = Depends(get_db)):
+    ensure_seeded(db)
     bundle = await run_investigation(db, request.address, request.blockchain)
     return ok(bundle, {"mode": bundle.get("mode"), "blockchain": bundle.get("blockchain")})
 
 
 @router.get("/{address}")
 def get_wallet(address: str, db: Session = Depends(get_db)):
+    ensure_seeded(db)
     detection = detect_blockchain(address)
     investigation = (
         db.query(Investigation)
@@ -77,6 +79,7 @@ def wallet_transactions(
     page: int = 1,
     page_size: int = 25,
 ):
+    ensure_seeded(db)
     page, page_size = clamp(page, page_size)
     # EVM addresses are stored lowercase; canonicalize checksummed input.
     variants = [address]
@@ -112,6 +115,7 @@ def wallet_transactions(
 
 @router.get("/{address}/threats")
 def wallet_threats(address: str, db: Session = Depends(get_db)):
+    ensure_seeded(db)
     threats = threat_intelligence.match_wallet(db, address)
     counterparty_rows = (
         db.query(Transaction.from_address, Transaction.to_address)
@@ -136,6 +140,7 @@ def wallet_threats(address: str, db: Session = Depends(get_db)):
 
 @router.get("/{address}/osint")
 def wallet_osint(address: str, db: Session = Depends(get_db)):
+    ensure_seeded(db)
     persisted = (
         db.query(OSINTFinding)
         .filter(OSINTFinding.wallet_address == address)
@@ -158,6 +163,7 @@ def wallet_graph(
     hops: int = Query(default=2, ge=1, le=7),
     max_nodes: int = Query(default=150, ge=10, le=400),
 ):
+    ensure_seeded(db)
     graph = build_graph(db, address, hops=hops, max_nodes=max_nodes)
     return ok(graph)
 

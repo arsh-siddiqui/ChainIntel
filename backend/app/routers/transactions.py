@@ -37,6 +37,9 @@ def list_transactions(
     page: int = 1,
     page_size: int = 25,
 ):
+    from app.core.database import ensure_seeded
+    ensure_seeded(db)
+
     page, page_size = clamp(page, page_size)
     query = db.query(Transaction)
     if search:
