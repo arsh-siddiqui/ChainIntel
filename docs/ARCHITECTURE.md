@@ -33,7 +33,7 @@
 │  └──────────┬────────────┘  │  case_events, alerts, monitored_wallets,
 └─────────────┼───────────────┘  evidence, reports, audit_log
               ▼
-   PostgreSQL / SQLite          httpx → external APIs
+           SQLite               httpx → external APIs
 ```
 
 ## Key design decisions

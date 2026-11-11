@@ -33,7 +33,7 @@ def providers(db: Session = Depends(get_db)):
 def overview(db: Session = Depends(get_db)):
     from app.models import Alert, MonitoredWallet
 
-    db_scheme = settings.database_url.split(":", 1)[0] if settings.database_url else "unknown"
+    db_scheme = settings.effective_database_url.split(":", 1)[0] if settings.effective_database_url else "sqlite"
     return ok(
         {
             "app_name": settings.app_name,
@@ -51,7 +51,7 @@ def overview(db: Session = Depends(get_db)):
                 "rate_limit_window_seconds": settings.rate_limit_window_seconds,
                 "max_upload_mb": settings.max_upload_mb,
             },
-            "evidence_dir": settings.evidence_dir,
+            "evidence_dir": settings.effective_evidence_dir,
             "cors_origins": settings.cors_origin_list,
         }
     )

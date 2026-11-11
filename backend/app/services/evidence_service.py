@@ -50,7 +50,7 @@ def save_upload(
             f"File type '{extension or 'unknown'}' is not allowed. Permitted: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
         )
 
-    evidence_dir = Path(settings.evidence_dir)
+    evidence_dir = Path(settings.effective_evidence_dir)
     evidence_dir.mkdir(parents=True, exist_ok=True)
     safe_name = _safe_filename(filename)
     file_path = evidence_dir / safe_name
@@ -126,15 +126,28 @@ def download_evidence(db: Session, evidence_id: int) -> tuple[Path, str]:
     evidence = get_evidence(db, evidence_id)
     if evidence is None:
         raise AppError(404, "EVIDENCE_NOT_FOUND", f"Evidence {evidence_id} does not exist.")
-    if not evidence.file_path or not Path(evidence.file_path).exists():
+    if not evidence.file_path:
         raise AppError(404, "FILE_NOT_FOUND", "No file is attached to this evidence record.")
-    return Path(evidence.file_path), evidence.file_name or "evidence.bin"
+    file_p = Path(evidence.file_path)
+    if not file_p.exists():
+        fallback_p = Path(settings.effective_evidence_dir) / file_p.name
+        if fallback_p.exists():
+            file_p = fallback_p
+        else:
+            raise AppError(404, "FILE_NOT_FOUND", "No file is attached to this evidence record.")
+    return file_p, evidence.file_name or "evidence.bin"
 
 
 def verify_integrity(db: Session, evidence: Evidence) -> bool:
     """Recompute SHA-256 for file-backed evidence; text evidence is verified from content_text."""
-    if evidence.file_path and Path(evidence.file_path).exists():
-        return sha256_file(evidence.file_path) == (evidence.sha256 or "")
+    if evidence.file_path:
+        p = Path(evidence.file_path)
+        if not p.exists():
+            fallback_p = Path(settings.effective_evidence_dir) / p.name
+            if fallback_p.exists():
+                p = fallback_p
+        if p.exists():
+            return sha256_file(str(p)) == (evidence.sha256 or "")
     if evidence.content_text is not None:
         return sha256_bytes(evidence.content_text.encode("utf-8")) == (evidence.sha256 or "")
     return False

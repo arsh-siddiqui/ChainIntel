@@ -1,31 +1,78 @@
 """Application configuration loaded from environment variables / .env."""
 from __future__ import annotations
 
+import os
 import re
+from pathlib import Path
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def is_render() -> bool:
+    """Detect whether running in Render environment."""
+    return os.environ.get("RENDER") is not None or os.path.exists("/var/data")
+
+
+def ensure_db_directory(url: str) -> None:
+    """Extract directory path from a SQLite database URL and create it if missing."""
+    if not url or not url.startswith("sqlite"):
+        return
+    # Strip sqlite: prefix variations
+    path_part = url
+    for prefix in ("sqlite:////", "sqlite:///", "sqlite://"):
+        if path_part.startswith(prefix):
+            path_part = path_part[len(prefix):]
+            if prefix == "sqlite:////" and not path_part.startswith("/"):
+                path_part = "/" + path_part
+            break
+    if not path_part or path_part == ":memory:":
+        return
+    # Strip query parameters if present
+    path_part = path_part.split("?")[0]
+    dir_path = os.path.dirname(path_part)
+    if dir_path:
+        os.makedirs(dir_path, exist_ok=True)
+
+
 def normalize_database_url(url: str) -> str:
-    """Normalize database URLs for SQLAlchemy.
+    """Normalize SQLite database URLs for SQLAlchemy.
     
-    Render PostgreSQL URLs (postgres:// or postgresql://) are normalized to
-    postgresql+psycopg:// for the psycopg v3 driver.
+    Accepts full SQLite URLs (sqlite:////path, sqlite:///./path) or raw file paths.
+    Ensures directories exist and guarantees compatibility across platforms.
     """
     if not url:
-        return ""
+        default_db = "/var/data/chainintel.db" if is_render() else "./data/chainintel.db"
+        res = f"sqlite:///{default_db}" if default_db.startswith("/") else f"sqlite:///{default_db}"
+        if is_render() and not res.startswith("sqlite:////"):
+            res = "sqlite:////var/data/chainintel.db"
+        ensure_db_directory(res)
+        return res
+
     cleaned = url.strip()
-    if cleaned.startswith("postgres://"):
-        return cleaned.replace("postgres://", "postgresql+psycopg://", 1)
-    if cleaned.startswith("postgresql://") and "+psycopg" not in cleaned and "+psycopg2" not in cleaned:
-        return cleaned.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    # Legacy PostgreSQL URL fallback to SQLite
+    if cleaned.startswith("postgres://") or cleaned.startswith("postgresql://"):
+        cleaned = "sqlite:////var/data/chainintel.db" if is_render() else "sqlite:///./data/chainintel.db"
+
+    # Raw file path conversion
+    if not cleaned.startswith("sqlite"):
+        if cleaned.startswith("/"):
+            cleaned = f"sqlite:///{cleaned}"
+        else:
+            cleaned = f"sqlite:///{cleaned}"
+
+    # Normalize absolute unix path (3 slashes to 4 slashes)
+    if cleaned.startswith("sqlite:///var/data"):
+        cleaned = cleaned.replace("sqlite:///var/data", "sqlite:////var/data", 1)
+
+    ensure_db_directory(cleaned)
     return cleaned
 
 
 def sanitize_database_url(url: str) -> str:
-    """Mask password in database URL for safe logging."""
+    """Mask credentials in database URL for safe logging."""
     if not url:
         return "not_configured"
-    # Replace password in postgresql+psycopg://user:password@host:port/db
     return re.sub(r"://([^:@]+):([^@]+)@", r"://\1:****@", url)
 
 
@@ -37,12 +84,6 @@ class Settings(BaseSettings):
     app_mode: str = "LIVE"
 
     database_url: str = ""
-    postgres_host: str = "localhost"
-    postgres_port: int = 5432
-    postgres_user: str = "postgres"
-    postgres_password: str = ""
-    postgres_db: str = "chainintel"
-
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     # Blockchain providers (LIVE mode)
@@ -68,27 +109,50 @@ class Settings(BaseSettings):
     rate_limit_requests: int = 120
     rate_limit_window_seconds: int = 60
     max_upload_mb: int = 10
-    evidence_dir: str = "./data/evidence"
+    evidence_dir: str = ""
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def validate_database_url(cls, v: str | None) -> str:
+        raw = str(v).strip() if v is not None and str(v).strip() else ""
+        return normalize_database_url(raw)
+
+    @field_validator("evidence_dir", mode="before")
+    @classmethod
+    def validate_evidence_dir(cls, v: str | None) -> str:
+        if v is not None and str(v).strip():
+            dir_path = str(v).strip()
+        elif is_render():
+            dir_path = "/var/data/evidence"
+        else:
+            dir_path = "./data/evidence"
+        os.makedirs(dir_path, exist_ok=True)
+        return dir_path
 
     @property
     def effective_database_url(self) -> str:
-        """Return the effective normalized database URL.
-        
-        Rules:
-        1. If DATABASE_URL is present in env/.env, it is ALWAYS used (never falls back to localhost).
-        2. If postgres_password is set, constructs PostgreSQL URL.
-        3. Only defaults to SQLite for local development when DATABASE_URL is absent.
-        """
+        """Return the effective normalized SQLite database URL."""
         if self.database_url and self.database_url.strip():
-            return normalize_database_url(self.database_url)
-        if self.postgres_password:
-            raw = f"postgresql+psycopg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
-            return normalize_database_url(raw)
-        return "sqlite:///./data/chainintel.db"
+            url = normalize_database_url(self.database_url)
+        elif is_render():
+            url = "sqlite:////var/data/chainintel.db"
+        else:
+            url = "sqlite:///./data/chainintel.db"
+        ensure_db_directory(url)
+        return url
+
+    @property
+    def effective_evidence_dir(self) -> str:
+        """Return the effective evidence directory, ensuring it exists."""
+        dir_path = self.evidence_dir if self.evidence_dir and self.evidence_dir.strip() else (
+            "/var/data/evidence" if is_render() else "./data/evidence"
+        )
+        os.makedirs(dir_path, exist_ok=True)
+        return dir_path
 
     @property
     def sanitized_database_url(self) -> str:
-        """Sanitized DB URL for safe logging without exposing passwords."""
+        """Sanitized DB URL for safe logging."""
         return sanitize_database_url(self.effective_database_url)
 
     @property

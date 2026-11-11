@@ -31,7 +31,7 @@ ChainIntel is a full-stack blockchain investigation platform for authorized cybe
 |---|---|
 | Frontend | Next.js 14 (App Router), React 18, TypeScript (strict), Tailwind CSS, TanStack Query, React Hook Form + Zod, @xyflow/react (React Flow), Recharts, Framer Motion, Lucide, sonner, date-fns |
 | Backend | Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy 2, httpx, NetworkX, pandas, reportlab |
-| Database | PostgreSQL (preferred) / SQLite (development fallback) |
+| Database | SQLite (locally and on Render) |
 | Tests | Pytest (backend), Vitest (frontend), Playwright (e2e) |
 
 ## Architecture
@@ -46,7 +46,7 @@ FastAPI backend (:8000)
     │   ├── wallet_analysis · graph_analysis · risk_engine
     │   ├── threat_intelligence · osint · monitoring · alert_engine
     │   └── case_service · evidence_service · report_service · audit
-    ├── SQLAlchemy models → PostgreSQL / SQLite
+    ├── SQLAlchemy models → SQLite
     └── External blockchain APIs / public intelligence sources (provider abstraction)
 ```
 
@@ -116,7 +116,7 @@ See `backend/.env.example`. Key variables:
 | Variable | Default | Purpose |
 |---|---|---|
 | `APP_MODE` | `LIVE` | Always `LIVE` (the app has no demo mode) |
-| `DATABASE_URL` | `sqlite:///./data/chainintel.db` | PostgreSQL recommended in production |
+| `DATABASE_URL` | `sqlite:///./data/chainintel.db` | SQLite database location (on Render: `sqlite:////var/data/chainintel.db`) |
 | `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated origins |
 | `MEMPOOL_API_URL` | `https://mempool.space/api` | Keyless Bitcoin API |
 | `BLOCKCHAIN_API_KEY` | *(empty)* | Optional blockchain.info `api_code` (raises fallback rate limit; public endpoints work without it) |
@@ -127,14 +127,15 @@ See `backend/.env.example`. Key variables:
 | `POLL_INTERVAL_SECONDS` | `60` | Monitoring engine cycle |
 | `MONITORING_ENABLED` | `true` | Start the background monitor loop |
 | `MAX_UPLOAD_MB` | `10` | Evidence upload cap |
-| `EVIDENCE_DIR` | `./data/evidence` | Local evidence storage (swap for object storage later) |
+| `EVIDENCE_DIR` | `./data/evidence` | Local evidence storage (on Render: `/var/data/evidence`) |
 
 API keys are read from the environment only and are **never** returned to the frontend.
 
 ## Database setup
 
-- **Development fallback:** SQLite (zero configuration) — tables are created automatically on first start.
-- **PostgreSQL (preferred):** set `DATABASE_URL=postgresql+psycopg2://user:pass@host:5432/chainintel`. For schema evolution use the shipped Alembic setup (`cd backend && alembic upgrade head`; initial revision included). See [docs/DATABASE.md](docs/DATABASE.md).
+- **SQLite:** zero configuration — tables are created automatically on first start.
+- **Render deployment:** uses persistent disk mounted at `/var/data` with `/var/data/chainintel.db` and `/var/data/evidence`.
+- **Alembic:** for schema evolution, use the shipped Alembic setup with SQLite batch support (`cd backend && alembic upgrade head`; initial revision included). See [docs/DATABASE.md](docs/DATABASE.md).
 
 ## Threat database import
 

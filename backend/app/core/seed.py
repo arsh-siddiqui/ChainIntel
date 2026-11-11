@@ -1,4 +1,4 @@
-"""Seed local database with initial comprehensive real demonstration dataset for ChainIntel."""
+"""Seed local SQLite database with initial comprehensive real demonstration dataset for ChainIntel."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -21,14 +21,11 @@ from app.utils.datetime import utcnow
 
 
 def seed_db(db: Session) -> None:
-    # Ensure database has complete demonstration dataset
-    if db.query(ThreatFinding).count() >= 8 and db.query(Transaction).count() >= 10:
-        return
-
+    """Idempotently seed demonstration and threat intelligence data without creating duplicate records."""
     now = utcnow()
 
     def get_or_create_wallet(address: str, chain: str, label: str, balance: float, asset: str, tx_count: int = 42) -> Wallet:
-        existing = db.query(Wallet).filter(Wallet.address == address).first()
+        existing = db.query(Wallet).filter(Wallet.address == address, Wallet.blockchain == chain).first()
         if existing:
             return existing
         w = Wallet(
@@ -43,23 +40,28 @@ def seed_db(db: Session) -> None:
             is_demo=True,
         )
         db.add(w)
+        db.flush()
         return w
 
     # 1. Target & Counterparty Wallets (Real Mainnet Entities across 5 Chains)
-    w_tornado = get_or_create_wallet("0x12d6621e19a95080e0276664261065623b1a0623", "ethereum", "Tornado.Cash 0.1 ETH Mixer", 845.50, "ETH", 12500)
-    w_satoshi = get_or_create_wallet("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "bitcoin", "Satoshi Nakamoto Genesis", 50.00, "BTC", 3840)
-    w_wannacry = get_or_create_wallet("19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P", "bitcoin", "WannaCry Ransomware Treasury", 14.58, "BTC", 340)
-    w_binance_btc = get_or_create_wallet("34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo", "bitcoin", "Binance Cold Storage", 24800.12, "BTC", 48200)
-    w_bitfinex_btc = get_or_create_wallet("bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr", "bitcoin", "Bitfinex Cold Storage", 18500.00, "BTC", 29100)
-    w_vitalik = get_or_create_wallet("0xd8da6bf26964af9d7eed9e03e53415d37aa96045", "ethereum", "vitalik.eth", 1420.50, "ETH", 8920)
-    w_binance_eth = get_or_create_wallet("0x28c6c06298d514db089934071355e5743bf21d60", "ethereum", "Binance 14 (Hot Wallet)", 15420.00, "ETH", 128400)
-    w_ronin = get_or_create_wallet("0x098b716b8aaf21512996dc57eb0615e2383e2f96", "ethereum", "Ronin Bridge $620M Exploit (Lazarus)", 17400.00, "ETH", 610)
-    w_ftx = get_or_create_wallet("0x50d1c9771902476076ecfc8b2a83ad6b9355a4c9", "ethereum", "FTX Accounts Drainer", 9420.00, "ETH", 480)
-    w_proxy = get_or_create_wallet("0x077d37a6553a309b888824e0373809071c356f9a", "ethereum", "Mixer Deposit Router Contract", 8.45, "ETH", 1820)
-    w_coinbase = get_or_create_wallet("0x7160ec9412b075c370e8550c5412469959779e9e", "ethereum", "Coinbase 1 (Hot Wallet)", 28900.00, "ETH", 94000)
-    w_bsc_drainer = get_or_create_wallet("0x444d852655513ab4a88f73a3aa5fe9422df56e92", "bsc", "BSC Token Hub Drainer ($570M Hack)", 2000000.00, "BNB", 140)
-    w_polygon_vault = get_or_create_wallet("0x3c783c21a0383057d128bae3314a4e461721b765", "polygon", "Polygon ERC20 Bridge Vault", 540000.00, "MATIC", 3500)
-    w_solana_drainer = get_or_create_wallet("5VCwKtPtjPhuPyBWxSyjhayHotRbjV49d3p48JkbfE3f", "solana", "FTX Solana Drainer Address", 14200.00, "SOL", 820)
+    wallets_to_seed = [
+        ("0x12d6621e19a95080e0276664261065623b1a0623", "ethereum", "Tornado.Cash 0.1 ETH Mixer", 845.50, "ETH", 12500),
+        ("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", "bitcoin", "Satoshi Nakamoto Genesis", 50.00, "BTC", 3840),
+        ("19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P", "bitcoin", "WannaCry Ransomware Treasury", 14.58, "BTC", 340),
+        ("34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo", "bitcoin", "Binance Cold Storage", 24800.12, "BTC", 48200),
+        ("bc1qgdjqv0av3q56jvd822syf4xyavbdchq96vg7wr", "bitcoin", "Bitfinex Cold Storage", 18500.00, "BTC", 29100),
+        ("0xd8da6bf26964af9d7eed9e03e53415d37aa96045", "ethereum", "vitalik.eth", 1420.50, "ETH", 8920),
+        ("0x28c6c06298d514db089934071355e5743bf21d60", "ethereum", "Binance 14 (Hot Wallet)", 15420.00, "ETH", 128400),
+        ("0x098b716b8aaf21512996dc57eb0615e2383e2f96", "ethereum", "Ronin Bridge $620M Exploit (Lazarus)", 17400.00, "ETH", 610),
+        ("0x50d1c9771902476076ecfc8b2a83ad6b9355a4c9", "ethereum", "FTX Accounts Drainer", 9420.00, "ETH", 480),
+        ("0x077d37a6553a309b888824e0373809071c356f9a", "ethereum", "Mixer Deposit Router Contract", 8.45, "ETH", 1820),
+        ("0x7160ec9412b075c370e8550c5412469959779e9e", "ethereum", "Coinbase 1 (Hot Wallet)", 28900.00, "ETH", 94000),
+        ("0x444d852655513ab4a88f73a3aa5fe9422df56e92", "bsc", "BSC Token Hub Drainer ($570M Hack)", 2000000.00, "BNB", 140),
+        ("0x3c783c21a0383057d128bae3314a4e461721b765", "polygon", "Polygon ERC20 Bridge Vault", 540000.00, "MATIC", 3500),
+        ("5VCwKtPtjPhuPyBWxSyjhayHotRbjV49d3p48JkbfE3f", "solana", "FTX Solana Drainer Address", 14200.00, "SOL", 820),
+    ]
+    for addr, chain, lbl, bal, ast, tx_cnt in wallets_to_seed:
+        get_or_create_wallet(addr, chain, lbl, bal, ast, tx_cnt)
     db.commit()
 
     # 2. Multi-Hop Graph Transactions (Real Mainnet Hashes & Interconnected Nodes)
@@ -83,7 +85,11 @@ def seed_db(db: Session) -> None:
     ]
 
     for tx_hash, chain, from_a, to_a, amt, asset, hours_ago in tx_list:
-        if not db.query(Transaction).filter(Transaction.tx_hash == tx_hash).first():
+        if not db.query(Transaction).filter(
+            Transaction.tx_hash == tx_hash,
+            Transaction.from_address == from_a,
+            Transaction.to_address == to_a,
+        ).first():
             db.add(
                 Transaction(
                     tx_hash=tx_hash,
@@ -118,7 +124,12 @@ def seed_db(db: Session) -> None:
     ]
 
     for addr, chain, cat, lbl, src, ref, conf, notes in threat_records:
-        if not db.query(ThreatFinding).filter(ThreatFinding.wallet_address == addr, ThreatFinding.category == cat).first():
+        if not db.query(ThreatFinding).filter(
+            ThreatFinding.wallet_address == addr,
+            ThreatFinding.source == src,
+            ThreatFinding.category == cat,
+            ThreatFinding.label == lbl,
+        ).first():
             db.add(
                 ThreatFinding(
                     wallet_address=addr,
@@ -147,7 +158,11 @@ def seed_db(db: Session) -> None:
     ]
 
     for addr, src, cat, rec_type, find, status, conf, ref, notes in osint_records:
-        if not db.query(OSINTFinding).filter(OSINTFinding.wallet_address == addr, OSINTFinding.source == src).first():
+        if not db.query(OSINTFinding).filter(
+            OSINTFinding.wallet_address == addr,
+            OSINTFinding.source == src,
+            OSINTFinding.record_type == rec_type,
+        ).first():
             db.add(
                 OSINTFinding(
                     wallet_address=addr,
@@ -166,177 +181,145 @@ def seed_db(db: Session) -> None:
     db.commit()
 
     # 5. Cases & Case Events
-    if db.query(Case).count() == 0:
-        c1 = Case(
-            case_number="CASE-2026-001",
-            title="Operation DarkWatch — Ransomware & State-Actor Fund Tracing",
-            description="Investigation into illicit bitcoin & EVM fund flow from ransomware extortion & Lazarus Group exploits.",
-            status="UNDER_INVESTIGATION",
-            priority="HIGH",
-            investigator="Lead Forensics Analyst",
-            created_at=now - timedelta(days=5),
-        )
-        c2 = Case(
-            case_number="CASE-2026-002",
-            title="EVM Exploit & Tornado Cash Privacy Obfuscation Analysis",
-            description="Tracking stolen protocol assets routed through Tornado Cash proxies & deposit routers.",
-            status="OPEN",
-            priority="CRITICAL",
-            investigator="Senior Forensics Lead",
-            created_at=now - timedelta(days=2),
-        )
-        c3 = Case(
-            case_number="CASE-2026-003",
-            title="Cross-Chain Bridge Drainer Incident (BSC & Ronin)",
-            description="Multi-chain bridge forgery forensic audit across BNB Chain, Ethereum, and Solana.",
-            status="RESOLVED",
-            priority="HIGH",
-            investigator="Cyber Incident Commander",
-            created_at=now - timedelta(days=10),
-        )
-        db.add_all([c1, c2, c3])
-        db.commit()
+    cases_data = [
+        ("CASE-2026-001", "Operation DarkWatch — Ransomware & State-Actor Fund Tracing", "Investigation into illicit bitcoin & EVM fund flow from ransomware extortion & Lazarus Group exploits.", "UNDER_INVESTIGATION", "HIGH", "Lead Forensics Analyst", 5),
+        ("CASE-2026-002", "EVM Exploit & Tornado Cash Privacy Obfuscation Analysis", "Tracking stolen protocol assets routed through Tornado Cash proxies & deposit routers.", "OPEN", "CRITICAL", "Senior Forensics Lead", 2),
+        ("CASE-2026-003", "Cross-Chain Bridge Drainer Incident (BSC & Ronin)", "Multi-chain bridge forgery forensic audit across BNB Chain, Ethereum, and Solana.", "RESOLVED", "HIGH", "Cyber Incident Commander", 10),
+    ]
+    for case_num, title, desc, st, prio, inv, days_ago in cases_data:
+        case = db.query(Case).filter(Case.case_number == case_num).first()
+        if not case:
+            case = Case(
+                case_number=case_num,
+                title=title,
+                description=desc,
+                status=st,
+                priority=prio,
+                investigator=inv,
+                created_at=now - timedelta(days=days_ago),
+            )
+            db.add(case)
+            db.flush()
+    db.commit()
 
-        ce1 = CaseEvent(
-            case_id=c1.id,
-            event_type="wallet_added",
-            description="Added target wallet 19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P to investigation.",
-            created_at=now - timedelta(days=5),
-        )
-        ce2 = CaseEvent(
-            case_id=c1.id,
-            event_type="evidence_attached",
-            description="Attached transaction execution graph and threat intelligence report.",
-            created_at=now - timedelta(days=3),
-        )
-        db.add_all([ce1, ce2])
+    c1 = db.query(Case).filter(Case.case_number == "CASE-2026-001").first()
+    if c1:
+        if not db.query(CaseEvent).filter(CaseEvent.case_id == c1.id, CaseEvent.event_type == "wallet_added").first():
+            db.add(
+                CaseEvent(
+                    case_id=c1.id,
+                    event_type="wallet_added",
+                    description="Added target wallet 19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P to investigation.",
+                    created_at=now - timedelta(days=5),
+                )
+            )
+        if not db.query(CaseEvent).filter(CaseEvent.case_id == c1.id, CaseEvent.event_type == "evidence_attached").first():
+            db.add(
+                CaseEvent(
+                    case_id=c1.id,
+                    event_type="evidence_attached",
+                    description="Attached transaction execution graph and threat intelligence report.",
+                    created_at=now - timedelta(days=3),
+                )
+            )
         db.commit()
 
     # 6. Active Monitored Wallets & Alerts
-    if db.query(MonitoredWallet).count() == 0:
-        mw1 = MonitoredWallet(
-            wallet_address="0x12d6621e19a95080e0276664261065623b1a0623",
-            blockchain="ethereum",
-            label="Tornado.Cash 0.1 ETH Mixer Watch",
-            rules={"direction": "any", "amount_threshold": 0.1, "on_threat_match": True, "flagged_counterparty": True},
-            status="ACTIVE",
-            last_checked=now - timedelta(minutes=2),
-            is_demo=True,
-        )
-        mw2 = MonitoredWallet(
-            wallet_address="0x098b716b8aaf21512996dc57eb0615e2383e2f96",
-            blockchain="ethereum",
-            label="Ronin Bridge Hacker Drainer Watch",
-            rules={"direction": "outgoing", "amount_threshold": 1.0, "on_threat_match": True, "flagged_counterparty": True},
-            status="ACTIVE",
-            last_checked=now - timedelta(minutes=5),
-            is_demo=True,
-        )
-        mw3 = MonitoredWallet(
-            wallet_address="34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo",
-            blockchain="bitcoin",
-            label="Binance Cold Treasury Watch",
-            rules={"direction": "any", "amount_threshold": 5.0, "on_threat_match": False, "flagged_counterparty": True},
-            status="ACTIVE",
-            last_checked=now - timedelta(minutes=10),
-            is_demo=True,
-        )
-        db.add_all([mw1, mw2, mw3])
-        db.commit()
+    mw_list = [
+        ("0x12d6621e19a95080e0276664261065623b1a0623", "ethereum", "Tornado.Cash 0.1 ETH Mixer Watch", {"direction": "any", "amount_threshold": 0.1, "on_threat_match": True, "flagged_counterparty": True}, 2),
+        ("0x098b716b8aaf21512996dc57eb0615e2383e2f96", "ethereum", "Ronin Bridge Hacker Drainer Watch", {"direction": "outgoing", "amount_threshold": 1.0, "on_threat_match": True, "flagged_counterparty": True}, 5),
+        ("34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo", "bitcoin", "Binance Cold Treasury Watch", {"direction": "any", "amount_threshold": 5.0, "on_threat_match": False, "flagged_counterparty": True}, 10),
+    ]
+    for addr, chain, lbl, rls, mins_ago in mw_list:
+        if not db.query(MonitoredWallet).filter(MonitoredWallet.wallet_address == addr).first():
+            db.add(
+                MonitoredWallet(
+                    wallet_address=addr,
+                    blockchain=chain,
+                    label=lbl,
+                    rules=rls,
+                    status="ACTIVE",
+                    last_checked=now - timedelta(minutes=mins_ago),
+                    is_demo=True,
+                )
+            )
+    db.commit()
 
-    if db.query(Alert).count() == 0:
-        a1 = Alert(
-            wallet_address="0x12d6621e19a95080e0276664261065623b1a0623",
-            rule={"direction": "incoming", "amount_threshold": 10.0, "on_threat_match": True},
-            transaction_hash="0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-            severity="CRITICAL",
-            status="NEW",
-            title="High-Risk Mixer Deposit Triggered",
-            message="Incoming transfer of 50.0 ETH detected on OFAC sanctioned Tornado Cash proxy from FTX Drainer wallet.",
-            is_demo=True,
-            created_at=now - timedelta(hours=1),
-        )
-        a2 = Alert(
-            wallet_address="0x098b716b8aaf21512996dc57eb0615e2383e2f96",
-            rule={"direction": "outgoing", "amount_threshold": 50.0, "on_threat_match": True},
-            transaction_hash="0xc2855523da5629c4a89f2142275038f4d92fb02d442b0833ec96d0d216d25cd2",
-            severity="HIGH",
-            status="NEW",
-            title="Exploit Outflow to Obfuscation Router",
-            message="100.0 ETH transferred from Ronin Hacker wallet to privacy deposit router contract.",
-            is_demo=True,
-            created_at=now - timedelta(hours=3),
-        )
-        a3 = Alert(
-            wallet_address="19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P",
-            rule={"direction": "outgoing", "amount_threshold": 2.0, "on_threat_match": True},
-            transaction_hash="a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d",
-            severity="HIGH",
-            status="ACKNOWLEDGED",
-            title="Outflow Detected on Flagged Ransomware Wallet",
-            message="Transaction of 2.5 BTC observed to Binance Cold Storage.",
-            is_demo=True,
-            created_at=now - timedelta(hours=6),
-        )
-        db.add_all([a1, a2, a3])
-        db.commit()
+    alert_list = [
+        ("0x12d6621e19a95080e0276664261065623b1a0623", {"direction": "incoming", "amount_threshold": 10.0, "on_threat_match": True}, "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060", "CRITICAL", "NEW", "High-Risk Mixer Deposit Triggered", "Incoming transfer of 50.0 ETH detected on OFAC sanctioned Tornado Cash proxy from FTX Drainer wallet.", 1),
+        ("0x098b716b8aaf21512996dc57eb0615e2383e2f96", {"direction": "outgoing", "amount_threshold": 50.0, "on_threat_match": True}, "0xc2855523da5629c4a89f2142275038f4d92fb02d442b0833ec96d0d216d25cd2", "HIGH", "NEW", "Exploit Outflow to Obfuscation Router", "100.0 ETH transferred from Ronin Hacker wallet to privacy deposit router contract.", 3),
+        ("19R2w9h5dK1i9fG3XjP4s6d9L2k1N3m4P", {"direction": "outgoing", "amount_threshold": 2.0, "on_threat_match": True}, "a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d", "HIGH", "ACKNOWLEDGED", "Outflow Detected on Flagged Ransomware Wallet", "Transaction of 2.5 BTC observed to Binance Cold Storage.", 6),
+    ]
+    for addr, rls, tx_h, sev, st, title, msg, hrs_ago in alert_list:
+        if not db.query(Alert).filter(Alert.wallet_address == addr, Alert.transaction_hash == tx_h, Alert.title == title).first():
+            db.add(
+                Alert(
+                    wallet_address=addr,
+                    rule=rls,
+                    transaction_hash=tx_h,
+                    severity=sev,
+                    status=st,
+                    title=title,
+                    message=msg,
+                    is_demo=True,
+                    created_at=now - timedelta(hours=hrs_ago),
+                )
+            )
+    db.commit()
 
     # 7. Evidence Records
-    if db.query(Evidence).count() == 0:
-        c_first = db.query(Case).first()
-        cid = c_first.id if c_first else 1
-        e1 = Evidence(
-            case_id=cid,
-            type="Transaction Hash",
-            title="Ransomware Outbound TX Execution Log",
-            description="2.5 BTC transfer hash log to Binance Cold Storage",
-            source="mempool.space",
-            sha256="a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d",
-            size_bytes=1024,
-            content_text="TXID: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d",
-            created_at=now - timedelta(days=3),
-        )
-        e2 = Evidence(
-            case_id=cid,
-            type="OSINT Result",
-            title="OFAC Sanctions Listing Certificate",
-            description="OFAC Specially Designated Nationals List ID 39481 verification for 0x12d6621e19a95080e0276664261065623b1a0623",
-            source="US Treasury OFAC Database",
-            sha256="5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-            size_bytes=2048,
-            content_text="OFAC SDN List Record #39481 - Tornado.Cash Smart Contract Address 0x12d6621e19a95080e0276664261065623b1a0623",
-            created_at=now - timedelta(days=2),
-        )
-        db.add_all([e1, e2])
+    c_first = db.query(Case).first()
+    cid = c_first.id if c_first else None
+    if cid:
+        evidence_list = [
+            (cid, "Transaction Hash", "Ransomware Outbound TX Execution Log", "2.5 BTC transfer hash log to Binance Cold Storage", "mempool.space", "a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d", 1024, "TXID: a1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d", 3),
+            (cid, "OSINT Result", "OFAC Sanctions Listing Certificate", "OFAC Specially Designated Nationals List ID 39481 verification for 0x12d6621e19a95080e0276664261065623b1a0623", "US Treasury OFAC Database", "5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060", 2048, "OFAC SDN List Record #39481 - Tornado.Cash Smart Contract Address 0x12d6621e19a95080e0276664261065623b1a0623", 2),
+        ]
+        for c_id, ev_type, title, desc, src, sha, sz, txt, days_ago in evidence_list:
+            if not db.query(Evidence).filter(Evidence.sha256 == sha).first():
+                db.add(
+                    Evidence(
+                        case_id=c_id,
+                        type=ev_type,
+                        title=title,
+                        description=desc,
+                        source=src,
+                        sha256=sha,
+                        size_bytes=sz,
+                        content_text=txt,
+                        created_at=now - timedelta(days=days_ago),
+                    )
+                )
         db.commit()
 
     # 8. Initial Investigation Record
-    if db.query(Investigation).count() == 0:
-        c_first = db.query(Case).first()
-        cid = c_first.id if c_first else 1
-        inv1 = Investigation(
-            case_id=cid,
-            title="Investigation: Tornado.Cash 0.1 ETH Mixer",
-            wallet_address="0x12d6621e19a95080e0276664261065623b1a0623",
-            blockchain="ethereum",
-            status="COMPLETED",
-            risk_level="HIGH",
-            risk_score=95.0,
-            investigator="Lead Analyst",
-            notes="Confirmed OFAC sanctioned privacy mixer contract with direct exploit deposit flow.",
-            created_at=now - timedelta(days=1),
+    if not db.query(Investigation).filter(Investigation.wallet_address == "0x12d6621e19a95080e0276664261065623b1a0623").first():
+        db.add(
+            Investigation(
+                case_id=cid,
+                title="Investigation: Tornado.Cash 0.1 ETH Mixer",
+                wallet_address="0x12d6621e19a95080e0276664261065623b1a0623",
+                blockchain="ethereum",
+                status="COMPLETED",
+                risk_level="HIGH",
+                risk_score=95.0,
+                investigator="Lead Analyst",
+                notes="Confirmed OFAC sanctioned privacy mixer contract with direct exploit deposit flow.",
+                created_at=now - timedelta(days=1),
+            )
         )
-        db.add(inv1)
         db.commit()
 
     # 9. Audit Log
-    log1 = AuditLog(
-        action="database_seeded",
-        resource_type="system",
-        resource_id="chainintel_master_seed",
-        investigator="System",
-        metadata_json={"seeded_wallets": 14, "seeded_threats": 11, "seeded_alerts": 3},
-        timestamp=now,
-    )
-    db.add(log1)
-    db.commit()
+    if not db.query(AuditLog).filter(AuditLog.action == "database_seeded", AuditLog.resource_id == "chainintel_master_seed").first():
+        db.add(
+            AuditLog(
+                action="database_seeded",
+                resource_type="system",
+                resource_id="chainintel_master_seed",
+                investigator="System",
+                metadata_json={"seeded_wallets": 14, "seeded_threats": 11, "seeded_alerts": 3},
+                timestamp=now,
+            )
+        )
+        db.commit()

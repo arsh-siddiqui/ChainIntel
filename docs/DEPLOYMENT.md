@@ -1,7 +1,7 @@
 # ChainIntel Deployment Guide
 
 This guide provides step-by-step instructions for deploying the **ChainIntel** application:
-- **Backend**: FastAPI on [Render](https://render.com) (with Render PostgreSQL).
+- **Backend**: FastAPI on [Render](https://render.com) (with SQLite on persistent disk).
 - **Frontend**: Next.js 14 on [Vercel](https://vercel.com).
 
 ---
@@ -13,10 +13,10 @@ This guide provides step-by-step instructions for deploying the **ChainIntel** a
 1. Log into your [Render Dashboard](https://dashboard.render.com).
 2. Click **New +** -> **Blueprint**.
 3. Connect your GitHub repository `arsh-siddiqui/ChainIntel`.
-4. Render will automatically detect `render.yaml` and prompt you to create:
-   - **PostgreSQL Database**: `chainintel-postgres`
-   - **Web Service**: `chainintel-backend`
-5. Click **Apply**. Render will provision the database, build the FastAPI backend, run Alembic migrations, and launch the service.
+4. Render will automatically detect `render.yaml` and configure:
+   - **Persistent Disk**: `chainintel-data` mounted at `/var/data`
+   - **Web Service**: `chainintel-backend` with SQLite database at `/var/data/chainintel.db` and evidence storage at `/var/data/evidence`
+5. Click **Apply**. Render will attach persistent storage, build the FastAPI backend, run Alembic migrations, and launch the service.
 6. Once deployed, note down your backend live URL (e.g. `https://chainintel-backend.onrender.com`).
 
 ---
@@ -25,14 +25,7 @@ This guide provides step-by-step instructions for deploying the **ChainIntel** a
 
 If you prefer to configure manually:
 
-1. **Create PostgreSQL Database on Render**:
-   - Go to **New +** -> **PostgreSQL**.
-   - Name: `chainintel-postgres`
-   - Database: `chainintel`
-   - User: `chainintel`
-   - Copy the **Internal Database URL** (or External Database URL).
-
-2. **Create Web Service on Render**:
+1. **Create Web Service on Render**:
    - Go to **New +** -> **Web Service**.
    - Connect repository `arsh-siddiqui/ChainIntel`.
    - **Root Directory**: `backend`
@@ -41,9 +34,13 @@ If you prefer to configure manually:
    - **Start Command**: `alembic upgrade head && gunicorn app.main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT`
    - **Health Check Path**: `/api/health`
 
+2. **Add Persistent Disk**:
+   - In Disks section, add a disk named `chainintel-data` mounted at `/var/data`.
+
 3. **Configure Environment Variables in Render**:
-   - `DATABASE_URL`: *<Your Render PostgreSQL Connection String>*
-   - `APP_MODE`: `DEMO` (or `LIVE`)
+   - `DATABASE_URL`: `sqlite:////var/data/chainintel.db`
+   - `EVIDENCE_DIR`: `/var/data/evidence`
+   - `APP_MODE`: `LIVE`
    - `CORS_ORIGINS`: `https://your-app.vercel.app,*`
    - Optional API Keys for LIVE mode:
      - `ETHERSCAN_API_KEY`

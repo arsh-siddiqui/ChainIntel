@@ -39,7 +39,7 @@ ChainIntel follows a decoupled, **Layered Client-Server Architecture** operating
 │   └───────────────┴───────────────────┴────────────────┴────────────────┘   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                         PERSISTENCE & STORAGE LAYER                         │
-│ (SQLAlchemy ORM • Alembic Migrations • SQLite / PostgreSQL • File Storage)  │
+│             (SQLAlchemy ORM • Alembic Migrations • SQLite • File Storage)   │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
