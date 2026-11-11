@@ -63,16 +63,23 @@ def check_db_connection() -> dict[str, str]:
         return {"status": "failed", "dialect": dialect_name, "url": sanitized_url, "error": str(exc)}
 
 
-def init_db() -> None:
+def init_db(seed: bool = False) -> None:
+    """Initialize database directory, verify connection, and ensure tables exist.
+    
+    Seeding is only performed when explicitly requested (e.g. from the one-time
+    initialization command), never in Gunicorn workers on startup.
+    """
     from app import models  # noqa: F401 - register all models on the metadata
-    from app.core.seed import seed_db
 
     ensure_db_directory(settings.effective_database_url)
     check_db_connection()
     Base.metadata.create_all(bind=engine)
 
-    db = SessionLocal()
-    try:
-        seed_db(db)
-    finally:
-        db.close()
+    if seed:
+        from app.core.seed import seed_db
+
+        db = SessionLocal()
+        try:
+            seed_db(db)
+        finally:
+            db.close()

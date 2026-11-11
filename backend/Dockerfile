@@ -14,5 +14,5 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-# Create tables on startup (use Alembic migrations for production upgrades), then serve the API.
-CMD ["sh", "-c", "python -c 'from app.core.database import init_db; init_db()' || true; uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Initialize schema and seed via one-time init command, then serve the API.
+CMD ["sh", "-c", "python -m app.core.init_db || true; uvicorn app.main:app --host 0.0.0.0 --port 8000"]

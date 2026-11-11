@@ -31,7 +31,7 @@ If you prefer to configure manually:
    - **Root Directory**: `backend`
    - **Environment**: `Python 3`
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `alembic upgrade head && gunicorn app.main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT`
+   - **Start Command**: `alembic upgrade head && python -m app.core.init_db && gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT`
    - **Health Check Path**: `/api/health`
 
 2. **Add Persistent Disk**:

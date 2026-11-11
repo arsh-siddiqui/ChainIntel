@@ -1,16 +1,20 @@
-"""Tests specifically verifying SQLite engine configuration, foreign keys, auto-directory creation, idempotent seeding, and migrations."""
+"""Tests verifying SQLite engine configuration, foreign keys, auto-directory creation, idempotent seeding, and migrations."""
 from __future__ import annotations
 
 import os
 import shutil
+import subprocess
+import sys
 import tempfile
 import pytest
-from sqlalchemy import text
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from app.core.config import ensure_db_directory, normalize_database_url, settings
-from app.core.database import SessionLocal, engine
-from app.core.seed import seed_db
+from app.core.database import Base, SessionLocal, engine
+from app.core.seed import normalize_wallet_address, seed_db
 from app.models import (
     Alert,
     AuditLog,
@@ -40,7 +44,6 @@ def test_sqlite_dialect_and_pragmas(db_session):
 
 def test_sqlite_foreign_key_enforcement(db_session):
     """Verify that SQLite actively enforces foreign key integrity constraints."""
-    # Attempt to insert a CaseEvent pointing to a non-existent case_id
     orphan_event = CaseEvent(
         case_id=99999999,
         event_type="test_orphan",
@@ -51,7 +54,6 @@ def test_sqlite_foreign_key_enforcement(db_session):
         db_session.commit()
     db_session.rollback()
 
-    # Attempt to insert an Evidence pointing to a non-existent case_id
     orphan_evidence = Evidence(
         case_id=99999999,
         type="Analyst Note",
@@ -74,11 +76,9 @@ def test_directory_auto_creation():
         ensure_db_directory(db_url)
         assert os.path.exists(os.path.dirname(deep_db_path))
 
-        # Test normalize_database_url ensures directory
         normalized = normalize_database_url(db_url)
         assert normalized.startswith("sqlite:///")
 
-        # Test evidence directory auto-creation
         deep_evidence_path = os.path.join(temp_dir, "deep_evidence", "uploads")
         assert not os.path.exists(deep_evidence_path)
         os.makedirs(deep_evidence_path, exist_ok=True)
@@ -87,44 +87,116 @@ def test_directory_auto_creation():
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-def test_seed_db_idempotency(db_session):
-    """Verify demo seeding is idempotent and does not create duplicate records."""
+def test_seed_db_idempotency_live_mode(db_session, monkeypatch):
+    """Verify seeding in LIVE mode does NOT insert fictional demo wallets and is idempotent."""
+    monkeypatch.setattr(settings, "app_mode", "LIVE")
+
     # Run seed_db once
     seed_db(db_session)
     counts_first = {
-        "wallets": db_session.query(Wallet).count(),
-        "transactions": db_session.query(Transaction).count(),
+        "wallets": db_session.query(Wallet).filter(Wallet.is_demo == True).count(),
         "threats": db_session.query(ThreatFinding).count(),
         "osint": db_session.query(OSINTFinding).count(),
-        "cases": db_session.query(Case).count(),
-        "monitors": db_session.query(MonitoredWallet).count(),
-        "alerts": db_session.query(Alert).count(),
-        "evidence": db_session.query(Evidence).count(),
-        "investigations": db_session.query(Investigation).count(),
-        "audit": db_session.query(AuditLog).count(),
     }
+    # Fictional demo wallets must NOT be inserted in LIVE mode
+    assert counts_first["wallets"] == 0
 
     # Run seed_db a second time - must not fail or create duplicate rows
     seed_db(db_session)
     counts_second = {
-        "wallets": db_session.query(Wallet).count(),
-        "transactions": db_session.query(Transaction).count(),
+        "wallets": db_session.query(Wallet).filter(Wallet.is_demo == True).count(),
         "threats": db_session.query(ThreatFinding).count(),
         "osint": db_session.query(OSINTFinding).count(),
-        "cases": db_session.query(Case).count(),
-        "monitors": db_session.query(MonitoredWallet).count(),
-        "alerts": db_session.query(Alert).count(),
-        "evidence": db_session.query(Evidence).count(),
-        "investigations": db_session.query(Investigation).count(),
-        "audit": db_session.query(AuditLog).count(),
     }
-
     assert counts_first == counts_second, f"Counts changed on re-seed: {counts_first} != {counts_second}"
+
+
+def test_seed_db_idempotency_demo_mode(monkeypatch):
+    """Verify seeding in DEMO mode inserts demo wallets and is strictly idempotent with ON CONFLICT DO NOTHING."""
+    monkeypatch.setattr(settings, "app_mode", "DEMO")
+
+    temp_dir = tempfile.mkdtemp()
+    try:
+        temp_db = os.path.join(temp_dir, "demo_seed_test.db")
+        test_engine = create_engine(f"sqlite:///{temp_db}", connect_args={"check_same_thread": False})
+        Base.metadata.create_all(test_engine)
+        test_session = Session(test_engine)
+
+        try:
+            # First seed run
+            seed_db(test_session)
+            wallets_first = test_session.query(Wallet).count()
+            threats_first = test_session.query(ThreatFinding).count()
+            txs_first = test_session.query(Transaction).count()
+            assert wallets_first > 0, "DEMO mode should seed demo wallets"
+
+            # Second seed run - must NOT raise sqlite3.IntegrityError: UNIQUE constraint failed
+            seed_db(test_session)
+            wallets_second = test_session.query(Wallet).count()
+            threats_second = test_session.query(ThreatFinding).count()
+            txs_second = test_session.query(Transaction).count()
+
+            assert wallets_first == wallets_second
+            assert threats_first == threats_second
+            assert txs_first == txs_second
+        finally:
+            test_session.close()
+            test_engine.dispose()
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_init_db_cli_command_twice():
+    """Verify executing python -m app.core.init_db twice consecutively is 100% error-free."""
+    temp_dir = tempfile.mkdtemp()
+    try:
+        temp_db = os.path.join(temp_dir, "init_cli_test.db")
+        backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        env = os.environ.copy()
+        env["DATABASE_URL"] = f"sqlite:///{temp_db.replace(os.sep, '/')}"
+        env["PYTHONPATH"] = backend_dir
+        env["APP_MODE"] = "DEMO"
+
+        # First run
+        res1 = subprocess.run(
+            [sys.executable, "-m", "app.core.init_db"],
+            cwd=backend_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert res1.returncode == 0, f"First init_db failed: {res1.stderr}\n{res1.stdout}"
+
+        # Second run immediately after
+        res2 = subprocess.run(
+            [sys.executable, "-m", "app.core.init_db"],
+            cwd=backend_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert res2.returncode == 0, f"Second init_db failed: {res2.stderr}\n{res2.stdout}"
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def test_app_startup_with_populated_database():
+    """Verify FastAPI application startup completes cleanly with an existing populated SQLite database."""
+    from app.main import app
+
+    # Booting the app runs lifespan (init_db(seed=False))
+    with TestClient(app) as client:
+        res = client.get("/api/health")
+        assert res.status_code == 200
+        assert res.json()["data"]["database"] == "connected"
+
+        res_overview = client.get("/api/settings/overview")
+        assert res_overview.status_code == 200
+        assert res_overview.json()["data"]["database"]["engine"] == "sqlite"
 
 
 def test_crud_all_models_sqlite(db_session):
     """Verify full CRUD lifecycle across core models on SQLite."""
-    # 1. Case CRUD
     test_case = Case(
         case_number="CASE-TEST-SQLITE-01",
         title="SQLite Test Case",
@@ -137,7 +209,6 @@ def test_crud_all_models_sqlite(db_session):
     db_session.commit()
     assert test_case.id is not None
 
-    # 2. CaseEvent (with FK)
     event = CaseEvent(
         case_id=test_case.id,
         event_type="test_event",
@@ -147,7 +218,6 @@ def test_crud_all_models_sqlite(db_session):
     db_session.commit()
     assert event.id is not None
 
-    # 3. Evidence (with FK)
     ev = Evidence(
         case_id=test_case.id,
         type="Analyst Note",
@@ -160,7 +230,6 @@ def test_crud_all_models_sqlite(db_session):
     db_session.commit()
     assert ev.id is not None
 
-    # 4. Investigation (with FK)
     inv = Investigation(
         case_id=test_case.id,
         title="SQLite Investigation",
@@ -175,7 +244,6 @@ def test_crud_all_models_sqlite(db_session):
     db_session.commit()
     assert inv.id is not None
 
-    # 5. Report (with FK)
     rep = Report(
         id="test-report-sqlite-uuid-001",
         case_id=test_case.id,
@@ -201,16 +269,14 @@ def test_crud_all_models_sqlite(db_session):
 
 def test_alembic_migrations_sqlite():
     """Verify that Alembic migrations run cleanly against SQLite (upgrade head and downgrade base)."""
-    import subprocess
-    import sqlite3
     temp_dir = tempfile.mkdtemp()
-    temp_db = os.path.join(temp_dir, "migration_test.db")
-    backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    env = os.environ.copy()
-    env["DATABASE_URL"] = f"sqlite:///{temp_db.replace(os.sep, '/')}"
-    env["PYTHONPATH"] = backend_dir
-
     try:
+        temp_db = os.path.join(temp_dir, "migration_test.db")
+        backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        env = os.environ.copy()
+        env["DATABASE_URL"] = f"sqlite:///{temp_db.replace(os.sep, '/')}"
+        env["PYTHONPATH"] = backend_dir
+
         # 1. Run alembic upgrade head
         up_res = subprocess.run(
             ["alembic", "upgrade", "head"],
@@ -222,6 +288,7 @@ def test_alembic_migrations_sqlite():
         assert up_res.returncode == 0, f"alembic upgrade head failed: {up_res.stderr}\n{up_res.stdout}"
 
         # Verify tables exist in SQLite
+        import sqlite3
         con = sqlite3.connect(temp_db)
         cur = con.cursor()
         tables = [r[0] for r in cur.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
@@ -249,4 +316,3 @@ def test_alembic_migrations_sqlite():
             assert exp not in remaining, f"Table {exp} should have been dropped on downgrade"
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
-

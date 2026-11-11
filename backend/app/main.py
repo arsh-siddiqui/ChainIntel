@@ -43,21 +43,34 @@ from app.routers import (
 setup_logging()
 logger = get_logger("main")
 
+_monitoring_started = False
+_monitor_task: asyncio.Task | None = None
+_stop_event: asyncio.Event | None = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
-    stop_event = asyncio.Event()
-    monitor_task = None
-    if settings.monitoring_enabled:
+    # Ensure database tables exist without triggering database seeding in workers
+    init_db(seed=False)
+
+    global _monitoring_started, _monitor_task, _stop_event
+    if settings.monitoring_enabled and not _monitoring_started:
+        _monitoring_started = True
+        _stop_event = asyncio.Event()
         from app.services.monitoring import monitor_loop
 
-        monitor_task = asyncio.create_task(monitor_loop(stop_event))
+        _monitor_task = asyncio.create_task(monitor_loop(_stop_event))
+        logger.info("Monitoring engine initialized")
+
     logger.info("ChainIntel started (mode=%s)", settings.app_mode.upper())
     yield
-    if monitor_task is not None:
-        stop_event.set()
-        monitor_task.cancel()
+
+    if _monitor_task is not None:
+        if _stop_event is not None:
+            _stop_event.set()
+        _monitor_task.cancel()
+        _monitoring_started = False
+        _monitor_task = None
     logger.info("ChainIntel shutdown complete")
 
 
