@@ -16,16 +16,19 @@ const CATEGORY_STYLES: Record<string, string> = {
   Unknown: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-export function ThreatPanel({ walletThreats, counterpartyThreats }: { walletThreats: ThreatFinding[]; counterpartyThreats: ThreatFinding[] }) {
+export function ThreatPanel({ walletThreats, counterpartyThreats }: { walletThreats?: ThreatFinding[]; counterpartyThreats?: ThreatFinding[] }) {
+  const safeWalletThreats = Array.isArray(walletThreats) ? walletThreats : [];
+  const safeCounterpartyThreats = Array.isArray(counterpartyThreats) ? counterpartyThreats : [];
+
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader title="Threat intelligence matches" subtitle="Records from configured threat datasets — source always shown" />
-        {walletThreats.length === 0 ? (
+        {safeWalletThreats.length === 0 ? (
           <EmptyState title="No threat-intelligence matches" description="This wallet does not appear in any configured threat dataset. Absence of a match is not proof of safety." />
         ) : (
           <ul className="divide-y divide-slate-100">
-            {walletThreats.map((threat, index) => (
+            {safeWalletThreats.map((threat, index) => (
               <li key={`${threat.wallet_address}-${threat.source}-${index}`} className="px-5 py-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -65,11 +68,11 @@ export function ThreatPanel({ walletThreats, counterpartyThreats }: { walletThre
 
       <Card>
         <CardHeader title="High-risk counterparties" subtitle="Wallets transacting with the investigated address that carry threat records" />
-        {counterpartyThreats.length === 0 ? (
+        {safeCounterpartyThreats.length === 0 ? (
           <EmptyState title="No flagged counterparties" description="None of the observed counterparties match configured threat datasets." />
         ) : (
           <ul className="divide-y divide-slate-100">
-            {counterpartyThreats.map((threat, index) => (
+            {safeCounterpartyThreats.map((threat, index) => (
               <li key={`${threat.wallet_address}-${index}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5">
                 <span className="font-mono text-xs text-ink">{threat.wallet_address}</span>
                 <div className="flex items-center gap-2">

@@ -28,7 +28,12 @@ function getSourceIcon(name: string) {
   return <Radar size={18} className="text-sky-600 dark:text-blue-400" />;
 }
 
-export function OsintPanel({ correlation }: { correlation: OSINTCorrelation }) {
+export function OsintPanel({ correlation }: { correlation?: OSINTCorrelation | null }) {
+  if (!correlation) return null;
+  const safeResults = Array.isArray(correlation.results) ? correlation.results : [];
+  const foundCount = correlation.found_count ?? safeResults.filter((r) => r.status === "FOUND").length;
+  const providerCount = correlation.provider_count ?? safeResults.length;
+
   return (
     <Card className="shadow-2xl">
       <CardHeader
@@ -45,13 +50,13 @@ export function OsintPanel({ correlation }: { correlation: OSINTCorrelation }) {
         }
         subtitle="Multi-source correlation verifying against public threat aggregators, block explorers, and co-spending clusters."
         action={
-          correlation.found_count > 0 ? (
+          foundCount > 0 ? (
             <Badge className="border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300 font-mono shadow-sm">
-              {correlation.found_count} Findings Identified
+              {foundCount} Findings Identified
             </Badge>
           ) : (
             <Badge className="border-sky-300 bg-sky-50 text-sky-700 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-300 font-mono shadow-sm">
-              {correlation.provider_count} Feeds Synchronized
+              {providerCount} Feeds Synchronized
             </Badge>
           )
         }
@@ -69,7 +74,7 @@ export function OsintPanel({ correlation }: { correlation: OSINTCorrelation }) {
 
       {/* Intelligence Cards Grid with Staggered Animations */}
       <div className="grid gap-4 p-6 md:grid-cols-2">
-        {correlation.results.map((result, idx) => (
+        {safeResults.map((result, idx) => (
           <OsintCard key={result.source_name} result={result} delay={idx * 0.04} />
         ))}
       </div>

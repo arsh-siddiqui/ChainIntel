@@ -19,13 +19,17 @@ import {
 import type { WalletSummary } from "@/types";
 import { formatCrypto, formatDateTime, formatNumber, truncateMiddle } from "@/lib/formatters";
 
-export function WalletOverview({ wallet }: { wallet: WalletSummary }) {
+export function WalletOverview({ wallet }: { wallet?: WalletSummary | null }) {
   const [copied, setCopied] = useState(false);
 
+  if (!wallet) return null;
+
   const copyAddress = () => {
-    navigator.clipboard.writeText(wallet.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
+    if (wallet?.address) {
+      navigator.clipboard.writeText(wallet.address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    }
   };
 
   const getExplorerLabel = (chain: string) => {

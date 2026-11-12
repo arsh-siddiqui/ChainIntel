@@ -22,8 +22,9 @@ function explorerTxUrl(blockchain: string, hash: string): string | null {
   }
 }
 
-export function TxTable({ transactions, focusAddress }: { transactions: NormalizedTx[]; focusAddress: string }) {
+export function TxTable({ transactions, focusAddress }: { transactions?: NormalizedTx[]; focusAddress: string }) {
   const [selected, setSelected] = useState<NormalizedTx | null>(null);
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
 
   const columns: Column<NormalizedTx>[] = [
     {
@@ -89,7 +90,7 @@ export function TxTable({ transactions, focusAddress }: { transactions: Normaliz
 
   return (
     <>
-      <DataTable columns={columns} rows={transactions} rowKey={(tx) => tx.tx_hash} pageSize={12} emptyMessage="No transactions found for this wallet." />
+      <DataTable columns={columns} rows={safeTransactions} rowKey={(tx) => tx.tx_hash} pageSize={12} emptyMessage="No transactions found for this wallet." />
       <Modal open={selected !== null} onClose={() => setSelected(null)} title="Transaction detail" wide>
         {selected ? (
           <div className="space-y-3 text-sm">

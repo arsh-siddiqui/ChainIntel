@@ -3,9 +3,11 @@
 import { CheckCircle2, MinusCircle, AlertTriangle, ShieldCheck, ShieldAlert, FileText } from "lucide-react";
 import type { RiskAssessment } from "@/types";
 
-export function RiskPanel({ risk }: { risk: RiskAssessment }) {
+export function RiskPanel({ risk }: { risk?: RiskAssessment | null }) {
+  if (!risk) return null;
   const isHigh = risk.band === "HIGH" || risk.band === "ELEVATED";
   const isModerate = risk.band === "MODERATE";
+  const indicators = Array.isArray(risk.indicators) ? risk.indicators : [];
 
   return (
     <div className="console-panel rounded-lg overflow-hidden">
@@ -47,15 +49,15 @@ export function RiskPanel({ risk }: { risk: RiskAssessment }) {
         </div>
 
         <div className="flex items-center gap-2 font-mono text-[11px] text-slate-400">
-          <span>{risk.indicators.filter((i) => i.status === "TRIGGERED").length} TRIGGERED</span>
+          <span>{indicators.filter((i) => i.status === "TRIGGERED").length} TRIGGERED</span>
           <span>·</span>
-          <span>{risk.indicators.filter((i) => i.status !== "TRIGGERED").length} CLEARED</span>
+          <span>{indicators.filter((i) => i.status !== "TRIGGERED").length} CLEARED</span>
         </div>
       </div>
 
       {/* 2. Concrete Evidence Indicators Checklist */}
       <div className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-slate-900/40">
-        {risk.indicators.map((indicator) => {
+        {indicators.map((indicator) => {
           const triggered = indicator.status === "TRIGGERED";
 
           return (

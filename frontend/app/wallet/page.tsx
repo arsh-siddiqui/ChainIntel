@@ -160,11 +160,49 @@ function WalletPageInner() {
     enabled: addressParam.length >= 4,
   });
 
-  const bundle = result ?? cached?.bundle ?? (
-    (!addressParam || addressParam.toLowerCase() === "0x12d6621e19a95080e0276664261065623b1a0623")
-      ? PRESEEDED_INVESTIGATION_BUNDLE
-      : null
-  );
+  const bundle = useMemo<InvestigationBundle | null>(() => {
+    if (result) return result;
+
+    const norm = (addressParam ?? "").toLowerCase();
+    const isPreseededDefault = !norm || norm === "0x12d6621e19a95080e0276664261065623b1a0623";
+
+    // If cached bundle has full arrays and wallet, use it directly
+    if (
+      cached?.bundle &&
+      Array.isArray(cached.bundle.transactions) &&
+      cached.bundle.transactions.length > 0 &&
+      cached.bundle.wallet &&
+      cached.bundle.graph
+    ) {
+      return cached.bundle;
+    }
+
+    // Default target fallback to preseeded forensic bundle
+    if (isPreseededDefault) {
+      return PRESEEDED_INVESTIGATION_BUNDLE;
+    }
+
+    // Partial cached bundle or database wallet fallback
+    if (cached?.bundle || cached?.wallet) {
+      const b = cached?.bundle as Partial<InvestigationBundle> | undefined;
+      const w = (cached?.wallet as any) ?? b?.wallet ?? PRESEEDED_INVESTIGATION_BUNDLE.wallet;
+      return {
+        ...PRESEEDED_INVESTIGATION_BUNDLE,
+        ...b,
+        address: addressParam,
+        blockchain: (cached?.validation as any)?.blockchain ?? b?.blockchain ?? PRESEEDED_INVESTIGATION_BUNDLE.blockchain,
+        wallet: w,
+        transactions: Array.isArray(b?.transactions) ? b!.transactions : [],
+        threats: Array.isArray(b?.threats) ? b!.threats : [],
+        counterparty_threats: Array.isArray(b?.counterparty_threats) ? b!.counterparty_threats : [],
+        graph: b?.graph ?? PRESEEDED_INVESTIGATION_BUNDLE.graph,
+        risk: b?.risk ?? PRESEEDED_INVESTIGATION_BUNDLE.risk,
+        osint: b?.osint ?? PRESEEDED_INVESTIGATION_BUNDLE.osint,
+      };
+    }
+
+    return null;
+  }, [result, cached, addressParam]);
 
   useEffect(() => {
     if (bundle?.wallet) setNotes("");
@@ -207,7 +245,7 @@ function WalletPageInner() {
         await api.post<CaseDetail>("/cases", {
           title: `Investigation ${truncateMiddle(address, 10, 6)}`,
           description: `Case created from wallet investigation of ${address}.`,
-          priority: (bundle?.risk.band === "HIGH" || bundle?.risk.band === "ELEVATED" ? "HIGH" : "MEDIUM") as string,
+          priority: (bundle?.risk?.band === "HIGH" || bundle?.risk?.band === "ELEVATED" ? "HIGH" : "MEDIUM") as string,
         })
       ).data,
     onSuccess: async (created) => {
@@ -220,7 +258,7 @@ function WalletPageInner() {
   });
 
   const dayActivity = useMemo(() => {
-    if (!bundle) return [];
+    if (!bundle || !Array.isArray(bundle.transactions)) return [];
     const byDay = new Map<string, { incoming: number; outgoing: number; count: number }>();
     for (const tx of bundle.transactions) {
       const day = (tx.timestamp ?? "").slice(0, 10);
@@ -235,7 +273,7 @@ function WalletPageInner() {
   }, [bundle]);
 
   const counterparties = useMemo(() => {
-    if (!bundle) return [];
+    if (!bundle || !Array.isArray(bundle.transactions)) return [];
     const map = new Map<string, { address: string; sent: number; received: number; txs: number }>();
     for (const tx of bundle.transactions) {
       const other = tx.from_address === bundle.address ? tx.to_address : tx.to_address === bundle.address ? tx.from_address : null;
@@ -304,12 +342,13 @@ function WalletPageInner() {
 
       {bundle ? (
         <>
-          <ThreatBanner risk={bundle.risk} threats={bundle.threats} />
-          <WalletOverview wallet={bundle.wallet} />
+          {bundle.risk && <ThreatBanner risk={bundle.risk} threats={bundle.threats ?? []} />}
+          {bundle.wallet && <WalletOverview wallet={bundle.wallet} />}
 
           <div role="tablist" aria-label="Investigation sections" className="relative flex gap-1.5 overflow-x-auto rounded-2xl border p-1.5 transition-colors border-slate-200/90 bg-white/80 dark:border-slate-800/80 dark:bg-slate-950/70 backdrop-blur-xl shadow-md">
             {TABS.map((tab) => {
               const active = activeTab === tab;
+              const threatCount = Array.isArray(bundle.threats) ? bundle.threats.length : 0;
               return (
                 <button
                   key={tab}
@@ -330,9 +369,9 @@ function WalletPageInner() {
                     />
                   )}
                   <span>{tab}</span>
-                  {tab === "Threat Intelligence" && bundle.threats.length > 0 ? (
+                  {tab === "Threat Intelligence" && threatCount > 0 ? (
                     <span className="rounded-full bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-300">
-                      {bundle.threats.length}
+                      {threatCount}
                     </span>
                   ) : null}
                 </button>
@@ -376,14 +415,14 @@ function WalletPageInner() {
               </div>
 
               {/* Forensic Risk Assessment Checklist */}
-              <RiskPanel risk={bundle.risk} />
+              {bundle.risk && <RiskPanel risk={bundle.risk} />}
 
               {/* Split Pane: Transaction Flow Ledger & Direct Counterparties */}
               <div className="grid gap-4 lg:grid-cols-12">
                 <div className="console-panel rounded-lg lg:col-span-7 flex flex-col">
                   <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2.5 dark:border-slate-800">
                     <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-ink">
-                      RECENT TRANSACTION FLOW ({bundle.transactions.length})
+                      RECENT TRANSACTION FLOW ({bundle.transactions?.length ?? 0})
                     </h3>
                     <button
                       onClick={() => setActiveTab("Transactions")}
@@ -393,7 +432,7 @@ function WalletPageInner() {
                     </button>
                   </div>
                   <div className="overflow-x-auto flex-1 max-h-[360px] thin-scroll">
-                    <TxTable transactions={bundle.transactions.slice(0, 10)} focusAddress={bundle.address} />
+                    <TxTable transactions={(bundle.transactions ?? []).slice(0, 10)} focusAddress={bundle.address} />
                   </div>
                 </div>
 
@@ -432,7 +471,7 @@ function WalletPageInner() {
                               </button>
                             </td>
                             <td className="px-2 py-2 text-right font-mono text-xs font-medium text-ink">
-                              {formatCrypto(cp.sent + cp.received, bundle.wallet.asset)}
+                              {formatCrypto(cp.sent + cp.received, bundle.wallet?.asset ?? "ETH")}
                             </td>
                             <td className="px-3 py-2 text-right font-mono text-xs text-slate-400">
                               {cp.txs}
@@ -464,11 +503,11 @@ function WalletPageInner() {
           {activeTab === "Transactions" ? (
             <Card>
               <CardHeader
-                title={`Transactions (${bundle.transactions.length} observed)`}
+                title={`Transactions (${bundle.transactions?.length ?? 0} observed)`}
                 subtitle="Newest first · click a hash for full detail"
-                action={bundle.wallet.explorer_url ? <a href={bundle.wallet.explorer_url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary hover:underline">Open explorer</a> : null}
+                action={bundle.wallet?.explorer_url ? <a href={bundle.wallet.explorer_url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-primary hover:underline">Open explorer</a> : null}
               />
-              <TxTable transactions={bundle.transactions} focusAddress={bundle.address} />
+              <TxTable transactions={bundle.transactions ?? []} focusAddress={bundle.address} />
             </Card>
           ) : null}
 
@@ -490,18 +529,18 @@ function WalletPageInner() {
                   <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} /> Show labels
                 </label>
                 <span className="ml-auto text-[11px] text-slate-400">
-                  {graphData ? `${graphData.stats.node_count} nodes · ${graphData.stats.edge_count} edges` : bundle.graph.stats.node_count + " nodes · " + bundle.graph.stats.edge_count + " edges"}
+                  {graphData ? `${graphData.stats?.node_count ?? 0} nodes · ${graphData.stats?.edge_count ?? 0} edges` : (bundle.graph?.stats?.node_count ?? 0) + " nodes · " + (bundle.graph?.stats?.edge_count ?? 0) + " edges"}
                 </span>
               </div>
-              <GraphCanvas graph={graphData ?? bundle.graph} trace={traceResult} showAmounts={showAmounts} showLabels={showLabels} minHeight={520} />
+              <GraphCanvas graph={graphData ?? bundle.graph ?? { nodes: [], edges: [], stats: { node_count: 0, edge_count: 0, unique_wallets: 0, total_amount: 0, truncated: false, hops: 0 } }} trace={traceResult} showAmounts={showAmounts} showLabels={showLabels} minHeight={520} />
             </div>
           ) : null}
 
-          {activeTab === "Threat Intelligence" ? <ThreatPanel walletThreats={bundle.threats} counterpartyThreats={bundle.counterparty_threats} /> : null}
+          {activeTab === "Threat Intelligence" ? <ThreatPanel walletThreats={bundle.threats ?? []} counterpartyThreats={bundle.counterparty_threats ?? []} /> : null}
 
-          {activeTab === "OSINT" ? <OsintPanel correlation={bundle.osint} /> : null}
+          {activeTab === "OSINT" && bundle.osint ? <OsintPanel correlation={bundle.osint} /> : null}
 
-          {activeTab === "Analysis" ? <RiskPanel risk={bundle.risk} /> : null}
+          {activeTab === "Analysis" && bundle.risk ? <RiskPanel risk={bundle.risk} /> : null}
 
           {activeTab === "Notes" ? (
             <Card>

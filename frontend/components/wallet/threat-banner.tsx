@@ -3,9 +3,11 @@
 import { AlertTriangle, ExternalLink, Shield, ShieldAlert, ShieldCheck } from "lucide-react";
 import type { RiskAssessment, ThreatFinding } from "@/types";
 
-export function ThreatBanner({ risk, threats }: { risk: RiskAssessment; threats: ThreatFinding[] }) {
+export function ThreatBanner({ risk, threats }: { risk: RiskAssessment; threats?: ThreatFinding[] }) {
+  if (!risk) return null;
   const isHigh = risk.band === "HIGH" || risk.band === "ELEVATED";
   const isModerate = risk.band === "MODERATE";
+  const safeThreats = Array.isArray(threats) ? threats : [];
 
   return (
     <div
@@ -54,12 +56,12 @@ export function ThreatBanner({ risk, threats }: { risk: RiskAssessment; threats:
               {risk.disclaimer || "Multi-source blockchain forensic assessment over indexed mempool and threat records."}
             </p>
 
-            {threats.length > 0 && (
+            {safeThreats.length > 0 && (
               <div className="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
                 <span className="font-bold text-rose-700 dark:text-rose-400 uppercase">
-                  MATCHED FEEDS ({threats.length}):
+                  MATCHED FEEDS ({safeThreats.length}):
                 </span>
-                {threats.map((t, idx) => (
+                {safeThreats.map((t, idx) => (
                   <span
                     key={idx}
                     className="inline-flex items-center gap-1 rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 font-semibold text-rose-800 dark:border-rose-900 dark:bg-rose-950/80 dark:text-rose-300"

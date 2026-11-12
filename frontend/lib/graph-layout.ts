@@ -26,10 +26,12 @@ export function processGraphData(
   options: GraphProcessOptions,
   layoutMode: "flow" | "radial" = "flow"
 ): ProcessedGraph {
-  const focus = graph.focus_address || graph.nodes[0]?.id || "";
-  const originalNodeCount = graph.nodes.length;
+  const rawNodes = Array.isArray(graph?.nodes) ? graph.nodes : [];
+  const rawEdges = Array.isArray(graph?.edges) ? graph.edges : [];
+  const focus = graph?.focus_address || rawNodes[0]?.id || "";
+  const originalNodeCount = rawNodes.length;
 
-  if (!graph.nodes.length) {
+  if (!rawNodes.length) {
     return {
       nodes: [],
       edges: [],
@@ -40,7 +42,7 @@ export function processGraphData(
   }
 
   // 1. Filter out hidden types and minimum amount
-  let filteredNodes = graph.nodes.filter((node) => {
+  let filteredNodes = rawNodes.filter((node) => {
     if (node.id === focus) return true;
     if (options.hiddenTypes?.has(node.type)) return false;
     if (options.flaggedOnly && node.risk === "clear" && (!node.categories || node.categories.length === 0)) {
@@ -51,7 +53,7 @@ export function processGraphData(
 
   const validNodeIds = new Set(filteredNodes.map((n) => n.id));
 
-  let filteredEdges = graph.edges.filter((edge) => {
+  let filteredEdges = rawEdges.filter((edge) => {
     if (!validNodeIds.has(edge.source) || !validNodeIds.has(edge.target)) return false;
     if (options.minAmount > 0 && edge.amount < options.minAmount) {
       // Don't filter out edges directly connected to focus or flagged nodes
